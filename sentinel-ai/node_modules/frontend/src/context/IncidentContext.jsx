@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
 import { initialIncidents, mockDashboardStats } from '../data/mockData';
 
 const IncidentContext = createContext();
@@ -11,6 +12,50 @@ export const IncidentProvider = ({ children }) => {
     role: "Lead Incident Commander",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200"
   });
+
+  useEffect(() => {
+    // Initialize Socket.IO client
+    const socket = io('http://localhost:5000');
+
+    socket.on('new-incident', (newIncident) => {
+      // Map MongoDB incident to frontend format if needed, assuming backend matches mostly
+      const formattedIncident = {
+        ...newIncident,
+        id: newIncident._id, // frontend uses 'id' instead of '_id'
+        confidenceScore: newIncident.aiScore || 0,
+        impactedUsers: newIncident.businessImpact?.affectedUsers ? parseInt(newIncident.businessImpact.affectedUsers) || 0 : 0
+      };
+      
+      setIncidents(prev => {
+        // Prevent duplicates
+        if (prev.find(i => i.id === formattedIncident.id)) return prev;
+        return [formattedIncident, ...prev];
+      });
+      
+      setStats(prev => ({
+        ...prev,
+        activeIncidents: prev.activeIncidents + 1,
+        criticalIncidents: formattedIncident.severity === "Critical" ? prev.criticalIncidents + 1 : prev.criticalIncidents
+      }));
+    });
+
+    socket.on('incident-updated', (updatedIncident) => {
+      const formattedIncident = {
+        ...updatedIncident,
+        id: updatedIncident._id,
+        confidenceScore: updatedIncident.aiScore || 0,
+        impactedUsers: updatedIncident.businessImpact?.affectedUsers ? parseInt(updatedIncident.businessImpact.affectedUsers) || 0 : 0
+      };
+
+      setIncidents(prev => prev.map(inc => 
+        inc.id === formattedIncident.id ? formattedIncident : inc
+      ));
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   const addIncident = (newIncidentData) => {
     const newId = `INC-${Math.floor(1000 + Math.random() * 9000)}`;

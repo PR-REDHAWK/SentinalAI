@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, Sparkles, Send, Cpu, Globe, ShieldAlert, CheckCircle2, Loader2 } from 'lucide-react';
 import { useIncidents } from '../context/IncidentContext';
+import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import Textarea from '../components/Textarea';
@@ -22,6 +23,7 @@ const AI_PROCESSING_STEPS = [
 export const ReportIncident = () => {
   const navigate = useNavigate();
   const { addIncident } = useIncidents();
+  const { isAuthenticated } = useAuth();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -74,11 +76,11 @@ export const ReportIncident = () => {
           region
         });
         setShowAIProcessingModal(false);
-        navigate(`/incidents/${created.id}`);
+        navigate(isAuthenticated ? `/incidents/${created.id}` : '/login');
       }, 1500);
       return () => clearTimeout(finalizeTimer);
     }
-  }, [showAIProcessingModal, currentStep, navigate, addIncident, title, description, severity, category, affectedService, region]);
+  }, [showAIProcessingModal, currentStep, navigate, addIncident, title, description, severity, category, affectedService, region, isAuthenticated]);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -193,9 +195,9 @@ export const ReportIncident = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/login')}
             >
-              Cancel
+              {isAuthenticated ? 'Back to Dashboard' : 'Back to Login'}
             </Button>
             <Button
               type="submit"

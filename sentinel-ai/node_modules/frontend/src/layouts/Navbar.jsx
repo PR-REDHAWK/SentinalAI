@@ -1,12 +1,21 @@
 import React, { useState } from 'react';
-import { Search, Bell, Sparkles, User, LogOut } from 'lucide-react';
-import { useIncidents } from '../context/IncidentContext';
+import { Search, Bell, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export const Navbar = () => {
-  const { user } = useIncidents();
+  const { user, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const displayName = user?.name || 'Engineer';
+  const displayRole = user?.role || 'DevOps Engineer';
+  const avatarUrl = user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200';
 
   return (
     <header className="h-16 glass-panel border-b border-slate-800/80 px-6 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md">
@@ -28,7 +37,7 @@ export const Navbar = () => {
         {/* Real-time Indicator */}
         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-mono">
           <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
-          <span>Socket.IO Simulated Stream</span>
+          <span>Socket.IO Live Stream</span>
         </div>
 
         {/* Notification Bell */}
@@ -64,16 +73,16 @@ export const Navbar = () => {
         {/* User Profile */}
         <div className="flex items-center gap-3 pl-3 border-l border-slate-800">
           <img
-            src={user.avatar}
-            alt={user.name}
+            src={avatarUrl}
+            alt={displayName}
             className="w-8 h-8 rounded-full border border-indigo-500/40 object-cover"
           />
           <div className="hidden sm:block text-left">
-            <p className="text-xs font-semibold text-slate-200">{user.name}</p>
-            <p className="text-[10px] text-slate-400 font-mono">{user.role}</p>
+            <p className="text-xs font-semibold text-slate-200">{displayName}</p>
+            <p className="text-[10px] text-slate-400 font-mono">{displayRole}</p>
           </div>
           <button
-            onClick={() => navigate('/')}
+            onClick={handleLogout}
             title="Sign Out"
             className="p-1.5 text-slate-400 hover:text-red-400 transition-colors"
           >
