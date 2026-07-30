@@ -1,6 +1,7 @@
 const express = require('express');
 const incidentRoutes = require('./incidentRoutes');
 const userRoutes = require('./userRoutes');
+const webhookRoutes = require('./webhookRoutes');
 
 const router = express.Router();
 
@@ -14,5 +15,6 @@ router.get('/health', (req, res) => {
 
 router.use('/incidents', incidentRoutes);
 router.use('/users', userRoutes);
+router.use('/webhooks', webhookRoutes);
 
 module.exports = router;

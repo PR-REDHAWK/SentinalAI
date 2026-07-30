@@ -20,6 +20,9 @@ const io = new Server(server, {
   }
 });
 
+// Make io accessible to our router
+app.set('io', io);
+
 // Basic Socket.IO connection handling
 io.on('connection', (socket) => {
   console.log(`Socket connected: ${socket.id}`);

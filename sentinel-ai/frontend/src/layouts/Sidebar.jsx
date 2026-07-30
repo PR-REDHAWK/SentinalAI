@@ -14,8 +14,9 @@ import {
 
 const navItems = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { name: 'Report Incident', path: '/report', icon: PlusCircle },
+  { name: 'Simulator', path: '/simulator', icon: Sparkles },
   { name: 'Incidents', path: '/incidents', icon: AlertOctagon },
+  { name: 'Report Incident', path: '/report', icon: PlusCircle },
   { name: 'Analytics', path: '/analytics', icon: BarChart3 },
   { name: 'Settings', path: '/settings', icon: Settings },
 ];

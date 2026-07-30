@@ -9,6 +9,7 @@ import IncidentsList from '../pages/IncidentsList';
 import IncidentDetail from '../pages/IncidentDetail';
 import Analytics from '../pages/Analytics';
 import Settings from '../pages/Settings';
+import WebhookSimulator from '../pages/WebhookSimulator';
 
 export const AppRoutes = () => {
   return (
@@ -24,6 +25,7 @@ export const AppRoutes = () => {
         <Route path="/incidents/:id" element={<IncidentDetail />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/simulator" element={<WebhookSimulator />} />
       </Route>
 
       {/* Fallback redirect */}
