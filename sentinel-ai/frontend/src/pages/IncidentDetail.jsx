@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useIncidents } from '../context/IncidentContext';
@@ -43,8 +44,15 @@ export const IncidentDetail = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleStatusChange = (newStatus) => {
-    updateIncidentStatus(incident.id, newStatus);
+  const handleStatusChange = async (newStatus) => {
+    try {
+      const updatedData = { ...incident, status: newStatus };
+      await axios.put(`http://localhost:5000/api/incidents/${incident.id}`, updatedData);
+      // Socket.IO will broadcast the 'incident-updated' event, but we can also optimistically update local state:
+      updateIncidentStatus(incident.id, newStatus);
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    }
   };
 
   const handleAskQuestion = (e) => {

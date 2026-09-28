@@ -23,8 +23,9 @@ export const Timeline = ({ events = [] }) => {
   return (
     <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
       {events.map((evt, idx) => {
-        const Icon = iconMap[evt.type] || GitCommit;
-        const colorClass = colorMap[evt.type] || colorMap.deployment;
+        const typeStr = evt.type || evt.event || 'deployment';
+        const Icon = iconMap[typeStr] || GitCommit;
+        const colorClass = colorMap[typeStr] || colorMap.deployment;
         
         return (
           <div key={evt.id || idx} className="relative group">
