@@ -75,6 +75,35 @@ const incidentSchema = new mongoose.Schema({
     type: [mongoose.Schema.Types.Mixed],
     default: [],
   },
+  aiAnalysisStatus: {
+    type: String,
+    enum: ['PENDING', 'COMPLETED', 'FAILED', 'SKIPPED'],
+    default: 'PENDING',
+  },
+  aiAnalysis: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null,
+  },
+  aiAnalyzedAt: {
+    type: Date,
+    default: null,
+  },
+  aiModel: {
+    type: String,
+    default: null,
+  },
+  aiAnalysisVersion: {
+    type: String,
+    default: null,
+  },
+  aiEvidenceFingerprint: {
+    type: String,
+    default: null,
+  },
+  aiError: {
+    type: String,
+    default: null,
+  },
   aiScore: {
     type: Number,
     default: null,

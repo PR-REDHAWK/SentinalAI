@@ -5,7 +5,7 @@ const { analyzeIncident } = require('../services/ai/geminiService');
 const { normalizeTelemetry } = require('../services/telemetryNormalizer');
 const { detectAnomalies } = require('../services/anomalyDetector');
 const { identifyIncident } = require('../services/incidentIdentifier');
-const { correlateEvidence } = require('../services/evidenceCorrelator');
+const { buildEvidencePackage, reasonOverIncident } = require('../services/ai/geminiReasoningService');
 
 // Shared handler for all webhooks
 const processWebhook = async (req, res, source) => {
@@ -28,7 +28,16 @@ const processWebhook = async (req, res, source) => {
     // 4. Run cross-signal correlation & root-cause evidence engine (Phase 4)
     const evidenceCorrelation = correlateEvidence(normalizedTelemetry, anomalyReport, incidentIdentification);
 
-    // 5. Create a base incident retaining raw payload, normalized telemetry, anomalies, hypotheses, and evidence chains
+    // 5. Construct Phase 5 Structured AI Evidence Package
+    const evidencePackage = buildEvidencePackage(
+      normalizedTelemetry,
+      anomalyReport,
+      incidentIdentification,
+      evidenceCorrelation,
+      payload
+    );
+
+    // 6. Create a base incident with deterministic intelligence and PENDING AI status
     const initialIncident = await Incident.create({
       title: `[${source.toUpperCase()}] ${incidentIdentification.primaryHypothesis.displayName || 'New Alert Detected'}`,
       description: `Raw payload received: ${JSON.stringify(payload).substring(0, 200)}...`,
@@ -47,15 +56,16 @@ const processWebhook = async (req, res, source) => {
       rootCauseCandidates: evidenceCorrelation.rootCauseCandidates || [],
       evidenceClusters: evidenceCorrelation.evidenceClusters || [],
       evidenceChain: evidenceCorrelation.evidenceChain || [],
+      aiAnalysisStatus: 'PENDING',
       status: 'Investigating'
     });
 
-    // 6. Emit 'new-incident' socket event to frontend
+    // 7. Emit 'new-incident' socket event to frontend immediately with deterministic intelligence
     if (io) {
       io.emit('new-incident', initialIncident);
     }
 
-    // 7. Create timeline event for alert reception, incident identification, and evidence correlation
+    // 8. Create timeline event for alert reception, incident identification, and evidence correlation
     await TimelineEvent.create({
       incidentId: initialIncident._id,
       event: 'alert',
@@ -63,19 +73,32 @@ const processWebhook = async (req, res, source) => {
       description: `Telemetry normalized & classified as '${incidentIdentification.primaryHypothesis.displayName}' (${incidentIdentification.primaryHypothesis.confidence}% confidence). Leading root cause hypothesis: ${evidenceCorrelation.primaryRootCause.candidate} (${evidenceCorrelation.primaryRootCause.confidence}% confidence).`
     });
 
-    // 8. Pass payload to Gemini AI for structural analysis (maintaining existing RCA workflow)
-    const aiAnalysis = await analyzeIncident(payload, source);
+    // 9. Execute Phase 5 Gemini AI Reasoning on the structured evidence package
+    let aiResult;
+    try {
+      aiResult = await reasonOverIncident(evidencePackage);
+    } catch (aiErr) {
+      console.error('AI Reasoning invocation error:', aiErr);
+      aiResult = {
+        status: 'FAILED',
+        error: aiErr.message,
+        analyzedAt: new Date(),
+        data: null
+      };
+    }
 
-    // 9. Update incident with AI structured data, preserving telemetry, anomalies, and hypotheses
+    const aiData = aiResult.data || {};
+
+    // 10. Update incident with Phase 5 AI structured reasoning & legacy backward compatibility
     const updatedIncident = await Incident.findByIdAndUpdate(
       initialIncident._id,
       {
-        title: aiAnalysis.title || initialIncident.title,
+        title: aiData.summary ? aiData.summary.substring(0, 90) : initialIncident.title,
         description: JSON.stringify(payload, null, 2),
-        severity: aiAnalysis.severity || initialIncident.severity || 'Medium',
-        category: aiAnalysis.category || 'Infrastructure',
-        affectedService: aiAnalysis.affectedService || normalizedTelemetry?.service || 'Unknown',
-        affectedRegion: aiAnalysis.affectedRegion || normalizedTelemetry?.region || 'Global',
+        severity: aiData.incident?.severity || initialIncident.severity || 'Medium',
+        category: 'Infrastructure',
+        affectedService: normalizedTelemetry?.service || 'Unknown',
+        affectedRegion: normalizedTelemetry?.region || 'Global',
         source: source.toLowerCase(),
         rawPayload: payload,
         normalizedTelemetry: normalizedTelemetry,
@@ -87,24 +110,50 @@ const processWebhook = async (req, res, source) => {
         rootCauseCandidates: evidenceCorrelation.rootCauseCandidates || [],
         evidenceClusters: evidenceCorrelation.evidenceClusters || [],
         evidenceChain: evidenceCorrelation.evidenceChain || [],
-        aiScore: aiAnalysis.confidence || 0,
-        aiSummary: aiAnalysis.aiSummary,
-        rootCause: aiAnalysis.rootCause,
-        businessImpact: aiAnalysis.businessImpact,
-        recommendations: aiAnalysis.recommendations,
+        aiAnalysisStatus: aiResult.status || 'COMPLETED',
+        aiAnalysis: aiData,
+        aiAnalyzedAt: aiResult.analyzedAt || new Date(),
+        aiModel: aiResult.model || 'gemini-2.5-flash',
+        aiAnalysisVersion: aiResult.analysisVersion || '5.0.0',
+        aiEvidenceFingerprint: aiResult.fingerprint || null,
+        aiError: aiResult.error || null,
+        aiScore: aiData.rootCauseAnalysis?.confidence || aiData.incident?.confidence || 80,
+        aiSummary: aiData.summary || aiData.evidenceNarrative || 'Analysis complete',
+        rootCause: {
+          summary: aiData.rootCauseAnalysis?.primaryHypothesis || evidenceCorrelation.primaryRootCause.candidate,
+          details: aiData.rootCauseAnalysis?.explanation || aiData.evidenceNarrative || '',
+          confidence: aiData.rootCauseAnalysis?.confidence || evidenceCorrelation.primaryRootCause.confidence,
+          evidence: aiData.rootCauseAnalysis?.evidence || []
+        },
+        businessImpact: {
+          affectedUsers: aiData.businessImpact?.userImpact || 'Unknown',
+          regions: [normalizedTelemetry?.region || 'Global'],
+          estimatedRevenueLoss: aiData.businessImpact?.estimatedImpact || 'Quantitative impact cannot be determined from available telemetry.',
+          serviceDegradation: aiData.businessImpact?.summary || 'Degraded performance'
+        },
+        recommendations: (aiData.recommendedActions || []).map((rec, idx) => ({
+          action: rec.action,
+          description: rec.reason,
+          confidence: 90,
+          type: rec.priority,
+          command: rec.command,
+          requiresApproval: rec.requiresApproval
+        }))
       },
       { new: true }
     );
 
-    // 9. Create timeline event for AI analysis completion
+    // 11. Create timeline event for AI reasoning completion
     await TimelineEvent.create({
       incidentId: initialIncident._id,
       event: 'ai',
-      title: 'AI Analysis Complete',
-      description: 'Gemini has structured the alert, predicted root cause, and generated recommendations.'
+      title: aiResult.status === 'COMPLETED' ? 'AI Grounded RCA Synthesis Complete' : 'AI Reasoning Fallback Applied',
+      description: aiResult.status === 'COMPLETED'
+        ? `Gemini synthesized root cause: "${aiData.rootCauseAnalysis?.primaryHypothesis}" (${aiData.rootCauseAnalysis?.confidence}% confidence) based on ${evidenceCorrelation.evidenceClusters.length} evidence clusters.`
+        : `Deterministic fallback applied (${aiResult.error || 'AI service unavailable'}).`
     });
 
-    // 10. Emit 'incident-updated' socket event
+    // 12. Emit 'incident-updated' socket event
     if (io) {
       io.emit('incident-updated', updatedIncident);
     }

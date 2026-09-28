@@ -32,7 +32,11 @@ import {
   Database,
   Clock,
   Compass,
-  Server
+  Server,
+  AlertOctagon,
+  Lock,
+  FileSearch,
+  RefreshCw
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -517,22 +521,43 @@ export const IncidentDetail = () => {
           <div className="glass-panel rounded-xl p-5 border border-slate-800 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                Predictive Root Cause Analysis
+                <BrainCircuit className="w-5 h-5 text-purple-400" />
+                AI Grounded Root Cause Synthesis
               </h2>
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-semibold">
-                {incident.rootCause?.confidence || 90}% Confidence
-              </span>
+              <div className="flex items-center gap-2">
+                {incident.aiAnalysisStatus && (
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
+                    incident.aiAnalysisStatus === 'COMPLETED' ? 'bg-emerald-950/50 border-emerald-500/40 text-emerald-300' :
+                    incident.aiAnalysisStatus === 'PENDING' ? 'bg-amber-950/50 border-amber-500/40 text-amber-300' :
+                    'bg-red-950/50 border-red-500/40 text-red-300'
+                  }`}>
+                    {incident.aiAnalysisStatus}
+                  </span>
+                )}
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-semibold">
+                  {incident.aiScore || incident.rootCause?.confidence || 90}% AI Confidence
+                </span>
+              </div>
             </div>
 
             <div className="p-3.5 rounded-lg bg-slate-900/90 border border-slate-800 space-y-2">
-              <p className="text-sm font-semibold text-indigo-300">{incident.rootCause?.summary}</p>
-              <p className="text-xs text-slate-400 leading-relaxed">{incident.rootCause?.details}</p>
+              <p className="text-sm font-semibold text-indigo-300">{incident.rootCause?.summary || incident.aiAnalysis?.rootCauseAnalysis?.primaryHypothesis}</p>
+              <p className="text-xs text-slate-400 leading-relaxed">{incident.rootCause?.details || incident.aiAnalysis?.rootCauseAnalysis?.explanation}</p>
             </div>
 
-            {incident.rootCause?.evidence && (
+            {incident.aiAnalysis?.evidenceNarrative && (
+              <div className="p-3 rounded-lg bg-purple-950/20 border border-purple-500/20 text-xs text-purple-200/90 leading-relaxed">
+                <span className="font-bold text-purple-300 block mb-1 font-mono text-[11px] uppercase tracking-wider">
+                  Evidence Narrative Progression:
+                </span>
+                {incident.aiAnalysis.evidenceNarrative}
+              </div>
+            )}
+
+            {incident.rootCause?.evidence && incident.rootCause.evidence.length > 0 && (
               <div className="space-y-2">
                 <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">
-                  Correlated Telemetry Evidence:
+                  Grounded Telemetry Evidence:
                 </span>
                 <ul className="space-y-1.5">
                   {incident.rootCause.evidence.map((item, idx) => (
@@ -544,41 +569,71 @@ export const IncidentDetail = () => {
                 </ul>
               </div>
             )}
+
+            {/* Uncertainty Assessment */}
+            {incident.aiAnalysis?.uncertainty && (
+              <div className="p-2.5 rounded-lg bg-slate-950/70 border border-slate-800/80 flex items-start gap-2 text-xs">
+                <HelpCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <span className="font-semibold text-slate-300">Uncertainty Assessment ({incident.aiAnalysis.uncertainty.level || 'LOW'}):</span>
+                  <p className="text-slate-400 text-[11px]">{incident.aiAnalysis.uncertainty.explanation}</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Business Impact Prediction Card */}
           <div className="glass-panel rounded-xl p-5 border border-slate-800 space-y-4">
-            <h2 className="text-base font-bold text-slate-100">Business Impact Assessment</h2>
+            <h2 className="text-base font-bold text-slate-100">Operational & Business Impact Assessment</h2>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-3.5 rounded-lg bg-slate-900/60 border border-slate-800 space-y-1">
                 <span className="text-slate-400 text-xs flex items-center gap-1.5">
                   <DollarSign className="w-4 h-4 text-emerald-400" />
-                  Estimated Financial Impact
+                  Estimated Quantitative Impact
                 </span>
-                <p className="text-lg font-bold text-emerald-400">{incident.businessImpact?.estimatedRevenueLoss || 'N/A'}</p>
+                <p className="text-xs font-medium text-slate-300">
+                  {incident.businessImpact?.estimatedRevenueLoss || incident.aiAnalysis?.businessImpact?.estimatedImpact || 'Quantitative impact cannot be determined from available telemetry.'}
+                </p>
               </div>
 
               <div className="p-3.5 rounded-lg bg-slate-900/60 border border-slate-800 space-y-1">
                 <span className="text-slate-400 text-xs flex items-center gap-1.5">
                   <Users className="w-4 h-4 text-indigo-400" />
-                  User Experience Degradation
+                  User Experience Impact
                 </span>
-                <p className="text-xs font-medium text-slate-200">{incident.businessImpact?.serviceDegradation || 'Minor'}</p>
+                <p className="text-xs font-medium text-slate-200">
+                  {incident.businessImpact?.affectedUsers || incident.aiAnalysis?.businessImpact?.userImpact || incident.businessImpact?.serviceDegradation || 'Active user workflows may experience elevated latency.'}
+                </p>
               </div>
             </div>
           </div>
 
           {/* Recommended Remediation Actions Card */}
           <div className="glass-panel rounded-xl p-5 border border-slate-800 space-y-4">
-            <h2 className="text-base font-bold text-slate-100">Recommended Action Plan</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold text-slate-100">Recommended Action Plan</h2>
+              <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
+                <Lock className="w-3.5 h-3.5 text-amber-400" />
+                Human-in-the-Loop Safe Execution
+              </span>
+            </div>
+            
             <div className="space-y-3">
-              {incident.recommendations?.map((rec) => (
-                <div key={rec.id} className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+              {incident.recommendations?.map((rec, idx) => (
+                <div key={rec.id || idx} className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-slate-100">{rec.action}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-slate-100">{rec.action}</span>
+                      {rec.requiresApproval && (
+                        <span className="px-2 py-0.5 text-[9px] font-mono font-bold text-amber-300 bg-amber-950/60 rounded border border-amber-500/40 flex items-center gap-1">
+                          <Lock className="w-2.5 h-2.5" />
+                          Requires Approval
+                        </span>
+                      )}
+                    </div>
                     <span className="px-2 py-0.5 text-[10px] font-mono font-semibold text-purple-400 bg-purple-500/10 rounded border border-purple-500/20">
-                      {rec.confidence}% Confidence
+                      {rec.type || 'HIGH'}
                     </span>
                   </div>
                   <p className="text-xs text-slate-400">{rec.description}</p>
@@ -587,17 +642,40 @@ export const IncidentDetail = () => {
                     <div className="mt-2 flex items-center justify-between p-2.5 rounded-lg bg-slate-950 font-mono text-xs text-indigo-300 border border-slate-800">
                       <code className="truncate max-w-md">{rec.command}</code>
                       <button
-                        onClick={() => handleCopyCommand(rec.id, rec.command)}
+                        onClick={() => handleCopyCommand(rec.id || idx, rec.command)}
                         className="ml-2 p-1 text-slate-400 hover:text-slate-200 transition-colors"
                         title="Copy command"
                       >
-                        {copiedId === rec.id ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                        {copiedId === (rec.id || idx) ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                       </button>
                     </div>
                   )}
                 </div>
               ))}
             </div>
+
+            {/* Investigation Steps */}
+            {incident.aiAnalysis?.investigationSteps && incident.aiAnalysis.investigationSteps.length > 0 && (
+              <div className="space-y-2 pt-3 border-t border-slate-800">
+                <span className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider block font-mono flex items-center gap-1.5">
+                  <FileSearch className="w-3.5 h-3.5 text-indigo-400" />
+                  Recommended Diagnostic Investigation Steps:
+                </span>
+                <div className="space-y-1.5">
+                  {incident.aiAnalysis.investigationSteps.map((step, idx) => (
+                    <div key={idx} className="text-xs text-slate-400 flex items-start gap-2 bg-slate-950/60 p-2.5 rounded border border-slate-800/80">
+                      <span className="w-4 h-4 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-[10px] font-mono font-bold shrink-0">
+                        {step.step || idx + 1}
+                      </span>
+                      <div>
+                        <strong className="text-slate-200 block">{step.action}</strong>
+                        <span className="text-[11px] text-slate-400">{step.reason}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
