@@ -5,6 +5,7 @@ const { analyzeIncident } = require('../services/ai/geminiService');
 const { normalizeTelemetry } = require('../services/telemetryNormalizer');
 const { detectAnomalies } = require('../services/anomalyDetector');
 const { identifyIncident } = require('../services/incidentIdentifier');
+const { correlateEvidence } = require('../services/evidenceCorrelator');
 const { buildEvidencePackage, reasonOverIncident } = require('../services/ai/geminiReasoningService');
 
 // Shared handler for all webhooks
