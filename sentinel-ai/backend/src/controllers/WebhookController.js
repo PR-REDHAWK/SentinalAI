@@ -3,6 +3,7 @@ const TimelineEvent = require('../models/TimelineEvent');
 const asyncHandler = require('../middleware/asyncHandler');
 const { analyzeIncident } = require('../services/ai/geminiService');
 const { normalizeTelemetry } = require('../services/telemetryNormalizer');
+const { detectAnomalies } = require('../services/anomalyDetector');
 
 // Shared handler for all webhooks
 const processWebhook = async (req, res, source) => {
@@ -13,10 +14,13 @@ const processWebhook = async (req, res, source) => {
   res.status(202).json({ success: true, message: `Webhook received from ${source}, processing started.` });
 
   try {
-    // 1. Normalize the incoming raw provider payload into standardized telemetry
+    // 1. Normalize incoming raw provider payload into standardized telemetry
     const normalizedTelemetry = normalizeTelemetry(payload, source);
 
-    // 2. Create a base unanalyzed incident retaining raw payload and normalized telemetry
+    // 2. Run deterministic anomaly detection engine on normalized telemetry
+    const anomalyReport = detectAnomalies(normalizedTelemetry);
+
+    // 3. Create a base unanalyzed incident retaining raw payload, normalized telemetry, and detected anomalies
     const initialIncident = await Incident.create({
       title: `[${source.toUpperCase()}] New Alert Detected`,
       description: `Raw payload received: ${JSON.stringify(payload).substring(0, 200)}...`,
@@ -27,26 +31,28 @@ const processWebhook = async (req, res, source) => {
       source: source.toLowerCase(),
       rawPayload: payload,
       normalizedTelemetry: normalizedTelemetry,
+      anomalies: anomalyReport.anomalies || [],
+      anomalySummary: anomalyReport,
       status: 'Investigating'
     });
 
-    // 3. Emit 'new-incident' socket event to frontend
+    // 4. Emit 'new-incident' socket event to frontend
     if (io) {
       io.emit('new-incident', initialIncident);
     }
 
-    // 4. Create timeline event for alert reception
+    // 5. Create timeline event for alert reception and anomaly detection
     await TimelineEvent.create({
       incidentId: initialIncident._id,
       event: 'alert',
       title: `Alert Received from ${source}`,
-      description: 'Webhook payload successfully ingested and telemetry normalized.'
+      description: `Telemetry ingested and normalized. ${anomalyReport.summary}`
     });
 
-    // 5. Pass payload to Gemini AI for structural analysis (maintaining existing RCA workflow)
+    // 6. Pass payload to Gemini AI for structural analysis (maintaining existing RCA workflow)
     const aiAnalysis = await analyzeIncident(payload, source);
 
-    // 6. Update incident with AI structured data, preserving raw and normalized telemetry
+    // 7. Update incident with AI structured data, preserving raw, normalized telemetry, and anomalies
     const updatedIncident = await Incident.findByIdAndUpdate(
       initialIncident._id,
       {
@@ -59,6 +65,8 @@ const processWebhook = async (req, res, source) => {
         source: source.toLowerCase(),
         rawPayload: payload,
         normalizedTelemetry: normalizedTelemetry,
+        anomalies: anomalyReport.anomalies || [],
+        anomalySummary: anomalyReport,
         aiScore: aiAnalysis.confidence || 0,
         aiSummary: aiAnalysis.aiSummary,
         rootCause: aiAnalysis.rootCause,
@@ -68,7 +76,7 @@ const processWebhook = async (req, res, source) => {
       { new: true }
     );
 
-    // 6. Create timeline event for AI analysis completion
+    // 8. Create timeline event for AI analysis completion
     await TimelineEvent.create({
       incidentId: initialIncident._id,
       event: 'ai',
@@ -76,7 +84,7 @@ const processWebhook = async (req, res, source) => {
       description: 'Gemini has structured the alert, predicted root cause, and generated recommendations.'
     });
 
-    // 7. Emit 'incident-updated' socket event
+    // 9. Emit 'incident-updated' socket event
     if (io) {
       io.emit('incident-updated', updatedIncident);
     }

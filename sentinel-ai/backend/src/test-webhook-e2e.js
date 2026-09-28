@@ -1,8 +1,9 @@
 const { normalizeTelemetry } = require('./services/telemetryNormalizer');
+const { detectAnomalies } = require('./services/anomalyDetector');
 
 // Test end-to-end compatibility of the normalized data with existing models and controllers
 const testWebhookPipeline = () => {
-  console.log('🧪 Testing End-to-End Webhook Pipeline Simulation...\n');
+  console.log('🧪 Testing End-to-End Webhook Pipeline Simulation (with Anomaly Detection)...\n');
 
   const sampleWebhook = {
     source: 'Datadog',
@@ -24,7 +25,13 @@ const testWebhookPipeline = () => {
     throw new Error('Failed to normalize Datadog payload');
   }
 
-  // Step 2: Simulate initial incident record creation
+  // Step 2: Anomaly Detection
+  const anomalyReport = detectAnomalies(normalized);
+  if (!anomalyReport || !anomalyReport.hasAnomalies) {
+    throw new Error('Anomaly detection failed to identify anomalies');
+  }
+
+  // Step 3: Simulate initial incident record creation
   const initialIncidentDoc = {
     title: `[${sampleWebhook.source.toUpperCase()}] New Alert Detected`,
     description: `Raw payload received: ${JSON.stringify(sampleWebhook.payload).substring(0, 200)}...`,
@@ -35,6 +42,8 @@ const testWebhookPipeline = () => {
     source: sampleWebhook.source.toLowerCase(),
     rawPayload: sampleWebhook.payload,
     normalizedTelemetry: normalized,
+    anomalies: anomalyReport.anomalies,
+    anomalySummary: anomalyReport,
     status: 'Investigating'
   };
 

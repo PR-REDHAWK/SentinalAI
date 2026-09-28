@@ -19,7 +19,10 @@ import {
   Copy, 
   Check, 
   MessageSquare, 
-  Send 
+  Send,
+  Activity,
+  AlertTriangle,
+  TrendingUp
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -173,6 +176,77 @@ export const IncidentDetail = () => {
             </div>
             <p className="text-sm text-slate-300 leading-relaxed">{incident.aiSummary}</p>
           </div>
+
+          {/* Phase 2: Detected Telemetry Anomalies Card */}
+          {incident.anomalies && incident.anomalies.length > 0 && (
+            <div className="glass-panel rounded-xl p-5 border border-indigo-500/20 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-indigo-400">
+                  <Activity className="w-5 h-5" />
+                  <h2 className="text-base font-bold text-slate-100">Detected Telemetry Anomalies</h2>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-mono font-semibold flex items-center gap-1.5">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  {incident.anomalies.length} Anomalous Signal{incident.anomalies.length > 1 ? 's' : ''}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {incident.anomalies.map((ano, idx) => {
+                  const severityStyle = {
+                    CRITICAL: 'bg-red-950/40 border-red-500/30 text-red-400 badge-critical',
+                    HIGH: 'bg-orange-950/40 border-orange-500/30 text-orange-400 badge-high',
+                    MEDIUM: 'bg-amber-950/40 border-amber-500/30 text-amber-400 badge-medium',
+                    LOW: 'bg-blue-950/40 border-blue-500/30 text-blue-400 badge-low',
+                    NORMAL: 'bg-emerald-950/40 border-emerald-500/30 text-emerald-400 badge-normal'
+                  }[ano.severity] || 'bg-slate-900 border-slate-800 text-slate-400';
+
+                  const badgeDot = {
+                    CRITICAL: '🔴',
+                    HIGH: '🟠',
+                    MEDIUM: '🟡',
+                    LOW: '🔵',
+                    NORMAL: '🟢'
+                  }[ano.severity] || '⚪';
+
+                  return (
+                    <div 
+                      key={idx} 
+                      className="p-3.5 rounded-lg bg-slate-900/80 border border-slate-800 space-y-2.5 hover:border-slate-700 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                          <span>{badgeDot}</span>
+                          {ano.metricDisplayName || ano.metric}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${severityStyle}`}>
+                            {ano.severity}
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-mono font-semibold">
+                            {ano.anomalyScore}/100
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs font-mono bg-slate-950/60 px-2.5 py-1.5 rounded border border-slate-800/60">
+                        <span className="text-slate-400">
+                          Observed: <strong className="text-slate-200">{ano.current}{ano.unit === 'percent' ? '%' : ano.unit ? ` ${ano.unit}` : ''}</strong>
+                        </span>
+                        <span className="text-slate-500">
+                          Baseline: <strong className="text-slate-400">{ano.baseline}{ano.unit === 'percent' ? '%' : ano.unit ? ` ${ano.unit}` : ''}</strong>
+                        </span>
+                      </div>
+
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        {ano.reason}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Root Cause Analysis (RCA) Card */}
           <div className="glass-panel rounded-xl p-5 border border-slate-800 space-y-4">
