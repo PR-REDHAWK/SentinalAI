@@ -31,6 +31,18 @@ const incidentSchema = new mongoose.Schema({
     enum: ['Investigating', 'Active', 'Mitigated', 'Resolved'],
     default: 'Investigating',
   },
+  source: {
+    type: String,
+    default: null,
+  },
+  rawPayload: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null,
+  },
+  normalizedTelemetry: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null,
+  },
   aiScore: {
     type: Number,
     default: null,
