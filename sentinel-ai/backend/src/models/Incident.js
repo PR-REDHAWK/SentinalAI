@@ -59,6 +59,22 @@ const incidentSchema = new mongoose.Schema({
     type: [mongoose.Schema.Types.Mixed],
     default: [],
   },
+  primaryRootCause: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null,
+  },
+  rootCauseCandidates: {
+    type: [mongoose.Schema.Types.Mixed],
+    default: [],
+  },
+  evidenceClusters: {
+    type: [mongoose.Schema.Types.Mixed],
+    default: [],
+  },
+  evidenceChain: {
+    type: [mongoose.Schema.Types.Mixed],
+    default: [],
+  },
   aiScore: {
     type: Number,
     default: null,

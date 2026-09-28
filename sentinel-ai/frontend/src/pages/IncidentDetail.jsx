@@ -25,7 +25,14 @@ import {
   TrendingUp,
   ShieldAlert,
   Layers,
-  HelpCircle
+  HelpCircle,
+  GitBranch,
+  ArrowDown,
+  Network,
+  Database,
+  Clock,
+  Compass,
+  Server
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -339,6 +346,165 @@ export const IncidentDetail = () => {
                         <span className="font-mono text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded text-[10px] font-semibold">
                           {alt.confidence}%
                         </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Phase 4: Why SentinelAI Thinks This (Evidence Chain & Root Cause) */}
+          {incident.primaryRootCause && (
+            <div className="glass-panel rounded-xl p-5 border border-purple-500/30 space-y-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-purple-400">
+                  <Network className="w-5 h-5" />
+                  <h2 className="text-base font-bold text-slate-100">Why SentinelAI Thinks This</h2>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-mono font-semibold flex items-center gap-1.5">
+                  <Compass className="w-3.5 h-3.5" />
+                  Cross-Signal Evidence Correlation
+                </span>
+              </div>
+
+              {/* Probable Root Cause Banner */}
+              <div className="p-4 rounded-xl bg-slate-900/90 border border-purple-500/30 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] uppercase font-mono tracking-wider text-purple-400 block font-semibold">
+                      Probable Root Cause Hypothesis
+                    </span>
+                    <h3 className="text-lg font-bold text-slate-100 mt-0.5">
+                      {incident.primaryRootCause.candidate}
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-purple-950/60 border border-purple-500/40 text-purple-300">
+                      {incident.primaryRootCause.confidence}% Confidence
+                    </span>
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                      {incident.primaryRootCause.status}
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  {incident.primaryRootCause.summary}
+                </p>
+
+                {incident.primaryRootCause.suspectedOrigin && (
+                  <div className="flex flex-wrap items-center gap-4 text-xs font-mono bg-slate-950/70 p-2.5 rounded-lg border border-slate-800">
+                    <div className="text-slate-400">
+                      Suspected Origin Service: <strong className="text-purple-300">{incident.primaryRootCause.suspectedOrigin.service}</strong>
+                    </div>
+                    {incident.primaryRootCause.suspectedOrigin.component && (
+                      <div className="text-slate-400">
+                        Component: <strong className="text-slate-200">{incident.primaryRootCause.suspectedOrigin.component}</strong>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Supporting and Contradicting Evidence */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-800/80">
+                  {/* Supporting Evidence */}
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] uppercase font-mono font-semibold text-emerald-400 block">
+                      Supporting Evidence ({incident.primaryRootCause.supportingEvidence?.length || 0})
+                    </span>
+                    {incident.primaryRootCause.supportingEvidence?.map((item, idx) => (
+                      <div key={idx} className="text-xs text-slate-300 bg-slate-950/60 p-2 rounded border border-slate-800/80 flex items-start gap-1.5">
+                        <span className="text-emerald-400 shrink-0">✓</span>
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Contradicting Evidence */}
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] uppercase font-mono font-semibold text-amber-400 block">
+                      Contradicting Signals ({incident.primaryRootCause.contradictingEvidence?.length || 0})
+                    </span>
+                    {incident.primaryRootCause.contradictingEvidence && incident.primaryRootCause.contradictingEvidence.length > 0 ? (
+                      incident.primaryRootCause.contradictingEvidence.map((item, idx) => (
+                        <div key={idx} className="text-xs text-amber-300 bg-amber-950/20 p-2 rounded border border-amber-500/20 flex items-start gap-1.5">
+                          <span className="text-amber-400 shrink-0">⚠</span>
+                          <span>{item}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-xs text-slate-500 italic p-2 bg-slate-950/40 rounded border border-slate-800/40">
+                        No contradictory signals detected.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Step-by-Step Evidence Chain */}
+              {incident.evidenceChain && incident.evidenceChain.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-slate-300">
+                    <GitBranch className="w-4 h-4 text-purple-400" />
+                    <h3 className="text-sm font-bold uppercase tracking-wider font-mono">
+                      Sequential Evidence Chain
+                    </h3>
+                  </div>
+
+                  <div className="space-y-2 relative pl-3 border-l-2 border-purple-500/30 ml-2">
+                    {incident.evidenceChain.map((step, idx) => {
+                      const stageStyle = {
+                        ORIGIN_SIGNAL: 'text-red-400 border-red-500/30 bg-red-950/30',
+                        PROPAGATION: 'text-amber-400 border-amber-500/30 bg-amber-950/30',
+                        DOWNSTREAM_IMPACT: 'text-indigo-400 border-indigo-500/30 bg-indigo-950/30',
+                        USER_IMPACT: 'text-purple-400 border-purple-500/30 bg-purple-950/30'
+                      }[step.stage] || 'text-slate-400 border-slate-800 bg-slate-900';
+
+                      return (
+                        <div key={idx} className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 relative space-y-1">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-300 flex items-center justify-center text-[10px] font-mono font-bold">
+                                {step.step}
+                              </span>
+                              <span className="text-xs font-bold text-slate-200">
+                                {step.title}
+                              </span>
+                            </div>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold border ${stageStyle}`}>
+                              {step.stage}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 pl-7">{step.observation}</p>
+                          {step.timestamp && (
+                            <span className="text-[10px] font-mono text-slate-500 pl-7 block">
+                              {new Date(step.timestamp).toLocaleTimeString()}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Evidence Clusters */}
+              {incident.evidenceClusters && incident.evidenceClusters.length > 0 && (
+                <div className="space-y-2 pt-2 border-t border-slate-800">
+                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block font-mono">
+                    Correlated Evidence Clusters:
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {incident.evidenceClusters.map((cluster, idx) => (
+                      <div key={idx} className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 space-y-1 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-purple-300 font-mono">{cluster.category}</span>
+                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-mono font-semibold">
+                            {cluster.strength}% Strength
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400">{cluster.explanation}</p>
                       </div>
                     ))}
                   </div>

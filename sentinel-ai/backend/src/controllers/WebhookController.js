@@ -5,6 +5,7 @@ const { analyzeIncident } = require('../services/ai/geminiService');
 const { normalizeTelemetry } = require('../services/telemetryNormalizer');
 const { detectAnomalies } = require('../services/anomalyDetector');
 const { identifyIncident } = require('../services/incidentIdentifier');
+const { correlateEvidence } = require('../services/evidenceCorrelator');
 
 // Shared handler for all webhooks
 const processWebhook = async (req, res, source) => {
@@ -24,7 +25,10 @@ const processWebhook = async (req, res, source) => {
     // 3. Run multi-signal incident identification engine (Phase 3)
     const incidentIdentification = identifyIncident(normalizedTelemetry, anomalyReport);
 
-    // 4. Create a base incident retaining raw payload, normalized telemetry, anomalies, and incident hypotheses
+    // 4. Run cross-signal correlation & root-cause evidence engine (Phase 4)
+    const evidenceCorrelation = correlateEvidence(normalizedTelemetry, anomalyReport, incidentIdentification);
+
+    // 5. Create a base incident retaining raw payload, normalized telemetry, anomalies, hypotheses, and evidence chains
     const initialIncident = await Incident.create({
       title: `[${source.toUpperCase()}] ${incidentIdentification.primaryHypothesis.displayName || 'New Alert Detected'}`,
       description: `Raw payload received: ${JSON.stringify(payload).substring(0, 200)}...`,
@@ -39,26 +43,30 @@ const processWebhook = async (req, res, source) => {
       anomalySummary: anomalyReport,
       identifiedIncident: incidentIdentification.primaryHypothesis,
       incidentHypotheses: incidentIdentification.hypotheses || [],
+      primaryRootCause: evidenceCorrelation.primaryRootCause,
+      rootCauseCandidates: evidenceCorrelation.rootCauseCandidates || [],
+      evidenceClusters: evidenceCorrelation.evidenceClusters || [],
+      evidenceChain: evidenceCorrelation.evidenceChain || [],
       status: 'Investigating'
     });
 
-    // 5. Emit 'new-incident' socket event to frontend
+    // 6. Emit 'new-incident' socket event to frontend
     if (io) {
       io.emit('new-incident', initialIncident);
     }
 
-    // 6. Create timeline event for alert reception and incident identification
+    // 7. Create timeline event for alert reception, incident identification, and evidence correlation
     await TimelineEvent.create({
       incidentId: initialIncident._id,
       event: 'alert',
       title: `Alert Received: ${incidentIdentification.primaryHypothesis.displayName}`,
-      description: `Telemetry normalized & classified as '${incidentIdentification.primaryHypothesis.displayName}' (${incidentIdentification.primaryHypothesis.confidence}% confidence). ${anomalyReport.summary}`
+      description: `Telemetry normalized & classified as '${incidentIdentification.primaryHypothesis.displayName}' (${incidentIdentification.primaryHypothesis.confidence}% confidence). Leading root cause hypothesis: ${evidenceCorrelation.primaryRootCause.candidate} (${evidenceCorrelation.primaryRootCause.confidence}% confidence).`
     });
 
-    // 7. Pass payload to Gemini AI for structural analysis (maintaining existing RCA workflow)
+    // 8. Pass payload to Gemini AI for structural analysis (maintaining existing RCA workflow)
     const aiAnalysis = await analyzeIncident(payload, source);
 
-    // 8. Update incident with AI structured data, preserving telemetry, anomalies, and hypotheses
+    // 9. Update incident with AI structured data, preserving telemetry, anomalies, and hypotheses
     const updatedIncident = await Incident.findByIdAndUpdate(
       initialIncident._id,
       {
@@ -75,6 +83,10 @@ const processWebhook = async (req, res, source) => {
         anomalySummary: anomalyReport,
         identifiedIncident: incidentIdentification.primaryHypothesis,
         incidentHypotheses: incidentIdentification.hypotheses || [],
+        primaryRootCause: evidenceCorrelation.primaryRootCause,
+        rootCauseCandidates: evidenceCorrelation.rootCauseCandidates || [],
+        evidenceClusters: evidenceCorrelation.evidenceClusters || [],
+        evidenceChain: evidenceCorrelation.evidenceChain || [],
         aiScore: aiAnalysis.confidence || 0,
         aiSummary: aiAnalysis.aiSummary,
         rootCause: aiAnalysis.rootCause,
