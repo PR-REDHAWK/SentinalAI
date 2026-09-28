@@ -51,6 +51,14 @@ const incidentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed,
     default: null,
   },
+  identifiedIncident: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null,
+  },
+  incidentHypotheses: {
+    type: [mongoose.Schema.Types.Mixed],
+    default: [],
+  },
   aiScore: {
     type: Number,
     default: null,

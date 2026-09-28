@@ -22,7 +22,10 @@ import {
   Send,
   Activity,
   AlertTriangle,
-  TrendingUp
+  TrendingUp,
+  ShieldAlert,
+  Layers,
+  HelpCircle
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -245,6 +248,102 @@ export const IncidentDetail = () => {
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* Phase 3: Detected Incident Hypotheses Card */}
+          {incident.identifiedIncident && (
+            <div className="glass-panel rounded-xl p-5 border border-indigo-500/30 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-indigo-400">
+                  <ShieldAlert className="w-5 h-5" />
+                  <h2 className="text-base font-bold text-slate-100">Detected Incident Hypothesis</h2>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-mono font-semibold flex items-center gap-1">
+                  <Layers className="w-3.5 h-3.5" />
+                  Multi-Signal Evidence Correlation
+                </span>
+              </div>
+
+              {/* Primary Most Likely Hypothesis */}
+              <div className="p-4 rounded-xl bg-slate-900/90 border border-indigo-500/30 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] uppercase font-mono tracking-wider text-indigo-400 block font-semibold">
+                      Most Likely Incident Category
+                    </span>
+                    <h3 className="text-lg font-bold text-slate-100 mt-0.5">
+                      {incident.identifiedIncident.displayName || incident.identifiedIncident.incidentType}
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold border ${
+                      incident.identifiedIncident.confidence >= 80 
+                        ? 'bg-emerald-950/50 border-emerald-500/40 text-emerald-300' 
+                        : 'bg-amber-950/50 border-amber-500/40 text-amber-300'
+                    }`}>
+                      {incident.identifiedIncident.confidence}% Confidence
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  {incident.identifiedIncident.explanation}
+                </p>
+
+                {/* Supporting Signals Breakdown */}
+                {incident.identifiedIncident.supportingEvidence && incident.identifiedIncident.supportingEvidence.length > 0 && (
+                  <div className="space-y-2 pt-2 border-t border-slate-800">
+                    <span className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider block font-mono">
+                      Correlated Supporting Signals:
+                    </span>
+                    <div className="space-y-1.5">
+                      {incident.identifiedIncident.supportingEvidence.map((ev, idx) => (
+                        <div key={idx} className="text-xs text-slate-400 flex items-start gap-2 bg-slate-950/50 p-2 rounded border border-slate-800/80">
+                          <span className="text-indigo-400 font-mono text-[10px] shrink-0 mt-0.5 font-bold">+{ev.weight}pts</span>
+                          <span className="text-slate-300">{ev.description}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Contradicting Signals (if any) */}
+                {incident.identifiedIncident.contradictingEvidence && incident.identifiedIncident.contradictingEvidence.length > 0 && (
+                  <div className="space-y-2 pt-2 border-t border-slate-800">
+                    <span className="text-[11px] font-semibold text-amber-400 uppercase tracking-wider block font-mono">
+                      Contradicting Evidence:
+                    </span>
+                    <div className="space-y-1.5">
+                      {incident.identifiedIncident.contradictingEvidence.map((ev, idx) => (
+                        <div key={idx} className="text-xs text-amber-300/80 flex items-start gap-2 bg-amber-950/20 p-2 rounded border border-amber-500/20">
+                          <span className="text-amber-400 font-mono text-[10px] shrink-0 mt-0.5 font-bold">{ev.weight}pts</span>
+                          <span>{ev.description}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Alternative Hypotheses */}
+              {incident.incidentHypotheses && incident.incidentHypotheses.length > 1 && (
+                <div className="space-y-2">
+                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block font-mono">
+                    Alternative Plausible Hypotheses:
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {incident.incidentHypotheses.slice(1).map((alt, idx) => (
+                      <div key={idx} className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 flex items-center justify-between text-xs">
+                        <span className="text-slate-300 font-medium">{alt.displayName || alt.incidentType}</span>
+                        <span className="font-mono text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded text-[10px] font-semibold">
+                          {alt.confidence}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
