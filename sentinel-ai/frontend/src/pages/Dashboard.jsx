@@ -4,6 +4,7 @@ import { useIncidents } from '../context/IncidentContext';
 import StatCard from '../components/StatCard';
 import ChartCard from '../components/ChartCard';
 import IncidentTable from '../components/IncidentTable';
+import EmptyState from '../components/EmptyState';
 import { 
   mockTrendData 
 } from '../data/mockData';
@@ -227,7 +228,16 @@ export const Dashboard = () => {
             </Link>
           </div>
 
-          <IncidentTable incidents={incidents.slice(0, 5)} />
+          {incidents.length === 0 ? (
+            <EmptyState
+              title="No Production Outages Detected"
+              description="Your infrastructure is currently operating smoothly. Inbound webhook alerts from Datadog, Prometheus, or AWS will automatically appear here."
+              actionLabel="Launch Webhook Simulator"
+              onAction={() => navigate('/simulator')}
+            />
+          ) : (
+            <IncidentTable incidents={incidents.slice(0, 5)} />
+          )}
         </div>
 
         {/* AI Copilot Intelligence Side Panel (1 col) */}

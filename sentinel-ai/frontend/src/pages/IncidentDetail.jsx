@@ -22,6 +22,8 @@ import {
   Send 
 } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export const IncidentDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -34,7 +36,7 @@ export const IncidentDetail = () => {
   const [chatHistory, setChatHistory] = useState([
     {
       sender: 'ai',
-      text: `I've analyzed ${incident.id}. Ask me anything about the root cause, deployment evidence, or recommended rollback steps.`
+      text: `I've analyzed ${incident?.id || 'this incident'}. Ask me anything about the root cause, deployment evidence, or recommended rollback steps.`
     }
   ]);
 
@@ -47,7 +49,7 @@ export const IncidentDetail = () => {
   const handleStatusChange = async (newStatus) => {
     try {
       const updatedData = { ...incident, status: newStatus };
-      await axios.put(`http://localhost:5000/api/incidents/${incident.id}`, updatedData);
+      await axios.put(`${API_URL}/api/incidents/${incident.id}`, updatedData);
       // Socket.IO will broadcast the 'incident-updated' event, but we can also optimistically update local state:
       updateIncidentStatus(incident.id, newStatus);
     } catch (err) {

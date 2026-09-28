@@ -15,6 +15,8 @@ import {
   CartesianGrid 
 } from 'recharts';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export const Analytics = () => {
   const [data, setData] = useState({
     categoryBreakdown: [],
@@ -25,7 +27,7 @@ export const Analytics = () => {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/analytics/summary');
+        const res = await axios.get(`${API_URL}/api/analytics/summary`);
         setData(res.data.data);
       } catch (err) {
         console.error("Failed to fetch analytics", err);

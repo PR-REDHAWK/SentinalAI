@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useIncidents } from '../context/IncidentContext';
 import IncidentTable from '../components/IncidentTable';
 import IncidentCard from '../components/IncidentCard';
+import EmptyState from '../components/EmptyState';
 import Input from '../components/Input';
 import Select from '../components/Select';
 import Button from '../components/Button';
@@ -112,9 +113,16 @@ export const IncidentsList = () => {
 
       {/* Main Content Display */}
       {filteredIncidents.length === 0 ? (
-        <div className="glass-panel rounded-xl p-12 text-center text-slate-400">
-          No incidents match the selected search criteria.
-        </div>
+        <EmptyState
+          title={searchTerm || severityFilter !== 'All' || statusFilter !== 'All' ? "No Matching Incidents" : "No Incidents Ingested"}
+          description={
+            searchTerm || severityFilter !== 'All' || statusFilter !== 'All'
+              ? "No incident records match the active search or filter criteria. Try resetting filters."
+              : "No production incidents have been detected. Incoming webhooks from Datadog, Prometheus, or AWS will appear here automatically."
+          }
+          actionLabel={searchTerm || severityFilter !== 'All' || statusFilter !== 'All' ? undefined : "Launch Webhook Simulator"}
+          onAction={searchTerm || severityFilter !== 'All' || statusFilter !== 'All' ? undefined : () => navigate('/simulator')}
+        />
       ) : viewMode === 'table' ? (
         <div className="glass-panel rounded-xl p-5 border border-slate-800">
           <IncidentTable incidents={filteredIncidents} />

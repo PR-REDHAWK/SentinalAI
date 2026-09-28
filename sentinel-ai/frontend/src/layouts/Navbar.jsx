@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Search, Bell, LogOut } from 'lucide-react';
+import { Search, Bell, LogOut, Radio } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useIncidents } from '../context/IncidentContext';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
+  const { isConnected } = useIncidents();
   const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
 
@@ -35,9 +37,13 @@ export const Navbar = () => {
       {/* Right Controls */}
       <div className="flex items-center gap-4">
         {/* Real-time Indicator */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-mono">
-          <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
-          <span>Socket.IO Live Stream</span>
+        <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-mono transition-all ${
+          isConnected
+            ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
+            : 'bg-rose-500/10 border border-rose-500/30 text-rose-300'
+        }`}>
+          <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400 animate-ping' : 'bg-rose-400'}`} />
+          <span>{isConnected ? 'Socket.IO Live Stream' : 'Live Stream Offline'}</span>
         </div>
 
         {/* Notification Bell */}

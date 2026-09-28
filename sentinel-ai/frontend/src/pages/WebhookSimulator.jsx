@@ -78,6 +78,8 @@ const WEBHOOK_ENDPOINTS = [
   }
 ];
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export const WebhookSimulator = () => {
   const [sending, setSending] = useState(null);
   const [status, setStatus] = useState(null);
@@ -86,7 +88,7 @@ export const WebhookSimulator = () => {
     setSending(integration.id);
     setStatus(null);
     try {
-      await axios.post(`http://localhost:5000${integration.endpoint}`, integration.payload);
+      await axios.post(`${API_URL}${integration.endpoint}`, integration.payload);
       setStatus({ type: 'success', message: `${integration.name} alert sent successfully!` });
     } catch (err) {
       console.error(err);

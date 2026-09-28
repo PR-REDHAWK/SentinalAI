@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
+import ToastContainer from '../components/ToastContainer';
 
 export const DashboardLayout = () => {
   return (
@@ -16,6 +17,9 @@ export const DashboardLayout = () => {
           <Outlet />
         </main>
       </div>
+
+      {/* Real-time Toast Notifications */}
+      <ToastContainer />
     </div>
   );
 };

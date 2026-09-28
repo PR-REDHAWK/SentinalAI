@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import axios from 'axios';
-// Removing mock data imports: initialIncidents, mockDashboardStats
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const IncidentContext = createContext();
 
@@ -18,17 +19,31 @@ export const IncidentProvider = ({ children }) => {
     accuracyChange: '+1.2%'
   });
   const [loading, setLoading] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
+  const [toasts, setToasts] = useState([]);
   const [user, setUser] = useState({
     name: "Alex Vance",
     role: "Lead Incident Commander",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200"
   });
 
+  const addToast = ({ title, description, type = 'info' }) => {
+    const id = Date.now() + Math.random().toString();
+    setToasts(prev => [...prev.slice(-4), { id, title, description, type }]); // Keep at most 5 toasts
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 5000);
+  };
+
+  const removeToast = (id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
   // Fetch initial incidents from MongoDB
   useEffect(() => {
     const fetchIncidents = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/incidents');
+        const res = await axios.get(`${API_URL}/api/incidents`);
         const formatted = res.data.data.map(inc => ({
           ...inc,
           id: inc._id,
@@ -61,7 +76,19 @@ export const IncidentProvider = ({ children }) => {
   // Socket.io for live updates
   useEffect(() => {
     // Initialize Socket.IO client
-    const socket = io('http://localhost:5000');
+    const socket = io(API_URL);
+
+    socket.on('connect', () => {
+      setIsConnected(true);
+    });
+
+    socket.on('disconnect', () => {
+      setIsConnected(false);
+    });
+
+    socket.on('connect_error', () => {
+      setIsConnected(false);
+    });
 
     socket.on('new-incident', (newIncident) => {
       // Map MongoDB incident to frontend format if needed, assuming backend matches mostly
@@ -83,6 +110,12 @@ export const IncidentProvider = ({ children }) => {
         activeIncidents: prev.activeIncidents + 1,
         criticalIncidents: formattedIncident.severity === "Critical" ? prev.criticalIncidents + 1 : prev.criticalIncidents
       }));
+
+      addToast({
+        title: `🔴 New ${formattedIncident.severity || 'Alert'} Incident`,
+        description: formattedIncident.title || 'Inbound infrastructure anomaly detected.',
+        type: 'alert'
+      });
     });
 
     socket.on('incident-updated', (updatedIncident) => {
@@ -96,8 +129,20 @@ export const IncidentProvider = ({ children }) => {
       setIncidents(prev => prev.map(inc => 
         inc.id === formattedIncident.id ? formattedIncident : inc
       ));
-      
-      // We could re-compute stats here, but simple active/critical count works for the demo
+
+      if (formattedIncident.status === 'Resolved') {
+        addToast({
+          title: '✅ Incident Resolved',
+          description: `${formattedIncident.title} has been marked as Resolved.`,
+          type: 'success'
+        });
+      } else if (formattedIncident.aiSummary) {
+        addToast({
+          title: '✨ AI Analysis Complete',
+          description: `Root cause identified for ${formattedIncident.title.substring(0, 35)}...`,
+          type: 'ai'
+        });
+      }
     });
 
     return () => {
@@ -191,6 +236,10 @@ export const IncidentProvider = ({ children }) => {
       stats,
       user,
       loading,
+      isConnected,
+      toasts,
+      addToast,
+      removeToast,
       addIncident,
       updateIncidentStatus
     }}>
