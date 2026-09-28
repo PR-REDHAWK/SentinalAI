@@ -5,10 +5,7 @@ import StatCard from '../components/StatCard';
 import ChartCard from '../components/ChartCard';
 import IncidentTable from '../components/IncidentTable';
 import { 
-  mockTrendData, 
-  mockSeverityDistribution, 
-  mockRecentAiAnalyses, 
-  mockUpcomingRecommendations 
+  mockTrendData 
 } from '../data/mockData';
 
 import { 
@@ -39,6 +36,34 @@ import {
 export const Dashboard = () => {
   const { incidents, stats, loading } = useIncidents();
   const navigate = useNavigate();
+
+  // Dynamic severity breakdown from real incidents
+  const severityDistribution = [
+    { name: "Critical", value: incidents.filter(i => i.severity === 'Critical').length, color: "#EF4444" },
+    { name: "High", value: incidents.filter(i => i.severity === 'High').length, color: "#F97316" },
+    { name: "Medium", value: incidents.filter(i => i.severity === 'Medium').length, color: "#FBBF24" },
+    { name: "Low", value: incidents.filter(i => i.severity === 'Low').length, color: "#3B82F6" }
+  ];
+
+  // Dynamic AI Correlation Log
+  const recentAiAnalyses = incidents.filter(i => i.aiSummary).slice(0, 3).map(inc => ({
+    id: inc.id,
+    incidentId: typeof inc.id === 'string' && inc.id.length > 8 ? inc.id.substring(inc.id.length - 8) : inc.id,
+    title: inc.title,
+    timestamp: new Date(inc.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    summary: inc.aiSummary
+  }));
+
+  // Dynamic Action Plan Recommendations
+  const upcomingRecommendations = incidents
+    .filter(i => i.recommendations && i.recommendations.length > 0 && i.status !== 'Resolved')
+    .slice(0, 3)
+    .map(inc => ({
+      id: inc.id,
+      title: inc.recommendations[0].action,
+      impact: inc.recommendations[0].description,
+      confidence: inc.recommendations[0].confidence || 90
+    }));
 
   if (loading) {
     return (
@@ -161,7 +186,7 @@ export const Dashboard = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={mockSeverityDistribution}
+                    data={severityDistribution}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
@@ -169,7 +194,7 @@ export const Dashboard = () => {
                     paddingAngle={4}
                     dataKey="value"
                   >
-                    {mockSeverityDistribution.map((entry, index) => (
+                    {severityDistribution.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -215,14 +240,16 @@ export const Dashboard = () => {
             </div>
 
             <div className="space-y-3">
-              {mockRecentAiAnalyses.map((ai) => (
+              {recentAiAnalyses.length === 0 ? (
+                <p className="text-xs text-slate-500 italic p-3">No AI correlations recorded yet.</p>
+              ) : recentAiAnalyses.map((ai) => (
                 <div key={ai.id} className="p-3 rounded-lg bg-slate-900/80 border border-purple-500/20 text-xs space-y-1 hover:border-purple-500/40 transition-colors">
                   <div className="flex items-center justify-between text-slate-300">
-                    <span className="font-semibold text-indigo-300">{ai.incidentId}</span>
+                    <span className="font-semibold text-indigo-300">INC-{ai.incidentId}</span>
                     <span className="text-[10px] text-slate-500 font-mono">{ai.timestamp}</span>
                   </div>
                   <p className="font-medium text-slate-200">{ai.title}</p>
-                  <p className="text-slate-400 text-[11px] leading-relaxed">{ai.summary}</p>
+                  <p className="text-slate-400 text-[11px] leading-relaxed line-clamp-2">{ai.summary}</p>
                 </div>
               ))}
             </div>
@@ -236,15 +263,17 @@ export const Dashboard = () => {
             </div>
 
             <div className="space-y-3">
-              {mockUpcomingRecommendations.map((rec) => (
-                <div key={rec.id} className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 text-xs space-y-1.5">
+              {upcomingRecommendations.length === 0 ? (
+                <p className="text-xs text-slate-500 italic p-3">No pending recommendations.</p>
+              ) : upcomingRecommendations.map((rec, idx) => (
+                <div key={rec.id || idx} className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 text-xs space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-slate-200">{rec.title}</span>
                     <span className="text-[10px] font-mono font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
                       {rec.confidence}% Match
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-400">{rec.impact}</p>
+                  <p className="text-[11px] text-slate-400 line-clamp-2">{rec.impact}</p>
                 </div>
               ))}
             </div>
