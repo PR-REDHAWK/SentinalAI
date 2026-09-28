@@ -9,13 +9,24 @@ import { Search, LayoutGrid, ListFilter, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const IncidentsList = () => {
-  const { incidents } = useIncidents();
+  const { incidents, loading } = useIncidents();
   const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [severityFilter, setSeverityFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full min-h-[60vh]">
+        <div className="flex flex-col items-center gap-4 text-slate-400">
+          <div className="w-8 h-8 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+          <p className="text-sm animate-pulse">Fetching incident history...</p>
+        </div>
+      </div>
+    );
+  }
 
   const filteredIncidents = incidents.filter(inc => {
     const matchesSearch = inc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

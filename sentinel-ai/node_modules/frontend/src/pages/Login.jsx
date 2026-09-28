@@ -9,8 +9,8 @@ import { useAuth } from '../context/AuthContext';
 export const Login = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('alex.vance@sentinel.ai');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [localError, setLocalError] = useState('');
 
   const { login, register, loading } = useAuth();

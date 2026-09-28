@@ -1,18 +1,64 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
-import { initialIncidents, mockDashboardStats } from '../data/mockData';
+import axios from 'axios';
+// Removing mock data imports: initialIncidents, mockDashboardStats
 
 const IncidentContext = createContext();
 
 export const IncidentProvider = ({ children }) => {
-  const [incidents, setIncidents] = useState(initialIncidents);
-  const [stats, setStats] = useState(mockDashboardStats);
+  const [incidents, setIncidents] = useState([]);
+  const [stats, setStats] = useState({
+    activeIncidents: 0,
+    criticalIncidents: 0,
+    resolvedToday: 0,
+    aiAccuracy: 94, // Hardcoded for now until AI feedback is implemented
+    activeChange: '+0%',
+    criticalChange: '+0%',
+    resolvedChange: '+0%',
+    accuracyChange: '+1.2%'
+  });
+  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState({
     name: "Alex Vance",
     role: "Lead Incident Commander",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200"
   });
 
+  // Fetch initial incidents from MongoDB
+  useEffect(() => {
+    const fetchIncidents = async () => {
+      try {
+        const res = await axios.get('http://localhost:5000/api/incidents');
+        const formatted = res.data.data.map(inc => ({
+          ...inc,
+          id: inc._id,
+          confidenceScore: inc.aiScore || 0,
+          impactedUsers: inc.businessImpact?.affectedUsers ? parseInt(inc.businessImpact.affectedUsers) || 0 : 0
+        }));
+        setIncidents(formatted);
+
+        // Compute real stats from DB data
+        const active = formatted.filter(i => i.status !== 'Resolved').length;
+        const critical = formatted.filter(i => i.severity === 'Critical' && i.status !== 'Resolved').length;
+        const resolved = formatted.filter(i => i.status === 'Resolved').length;
+        
+        setStats(prev => ({
+          ...prev,
+          activeIncidents: active,
+          criticalIncidents: critical,
+          resolvedToday: resolved
+        }));
+      } catch (error) {
+        console.error("Failed to fetch initial incidents:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchIncidents();
+  }, []);
+
+  // Socket.io for live updates
   useEffect(() => {
     // Initialize Socket.IO client
     const socket = io('http://localhost:5000');
@@ -50,6 +96,8 @@ export const IncidentProvider = ({ children }) => {
       setIncidents(prev => prev.map(inc => 
         inc.id === formattedIncident.id ? formattedIncident : inc
       ));
+      
+      // We could re-compute stats here, but simple active/critical count works for the demo
     });
 
     return () => {
@@ -142,6 +190,7 @@ export const IncidentProvider = ({ children }) => {
       incidents,
       stats,
       user,
+      loading,
       addIncident,
       updateIncidentStatus
     }}>

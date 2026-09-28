@@ -37,8 +37,19 @@ import {
 } from 'recharts';
 
 export const Dashboard = () => {
-  const { incidents, stats } = useIncidents();
+  const { incidents, stats, loading } = useIncidents();
   const navigate = useNavigate();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full min-h-[60vh]">
+        <div className="flex flex-col items-center gap-4 text-slate-400">
+          <div className="w-8 h-8 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+          <p className="text-sm animate-pulse">Loading live telemetry and AI correlations...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
