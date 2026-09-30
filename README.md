@@ -12,30 +12,30 @@
 
 ```mermaid
 graph TD
-    subgraph SHOPDEMO ["SHOPDEMO (Simulated Production Environment - Port 5174 / 5100)"]
-        UI["Customer Storefront UI<br/>(Browsing, Cart, Checkout)"]
-        BE["Backend Microservices Kernel<br/>(API Gateway, Auth, Product, Order, Payment, DB)"]
-        ENG["Chaos Simulator Engine<br/>(Baselines, Traffic Loop, 8 Chaos Scenarios)"]
+    subgraph SHOPDEMO ["SHOPDEMO - Simulated Production Environment"]
+        UI["Storefront UI & User Actions<br/>Browsing, Cart, Checkout"]
+        BE["Backend Microservices Kernel<br/>API Gateway, Auth, Product, Order, Payment, DB"]
+        ENG["Chaos Simulator Engine<br/>Baselines, Traffic Loop, 8 Chaos Scenarios"]
         ADP["Telemetry Normalization Adapter"]
     end
 
     subgraph CHAOS ["DEV OPS CHAOS CONTROL PLANE"]
-        CTRL["SentinelAI Chaos Control<br/>(Scenario Ingestion, Blind Test, Reset)"]
+        CTRL["SentinelAI Chaos Control<br/>Scenario Ingestion, Blind Test, Reset"]
     end
 
-    subgraph SENTINEL ["SENTINEL AI (Incident Intelligence Engine - Port 5173 / 5000)"]
+    subgraph SENTINEL ["SENTINEL AI - Incident Intelligence Engine"]
         P1["Phase 1: Telemetry Normalization"]
-        P2["Phase 2: Anomaly Scoring (0-100)"]
+        P2["Phase 2: Anomaly Scoring 0-100"]
         P3["Phase 3: Multi-Signal Incident Taxonomy"]
         P4["Phase 4: Cross-Signal Correlation & Causal DAG"]
         P5["Phase 5: Gemini 2.5 Flash Grounded RCA"]
     end
 
-    CTRL -->|Modifies State / Injects Failure| ENG
-    ENG -->|Degrades API / Delays Responses| BE
+    CTRL -->|Modifies State or Injects Failure| ENG
+    ENG -->|Degrades API or Delays Responses| BE
     BE -->|Manifests Failure Behavior| UI
-    ENG -->|Raw Metric Observations (No Ground Truth)| ADP
-    ADP -->|Datadog / Prometheus / K8s Webhooks| P1
+    ENG -->|Raw Metric Observations - No Ground Truth| ADP
+    ADP -->|Datadog or Prometheus or K8s Webhooks| P1
     P1 --> P2 --> P3 --> P4 --> P5
 ```
 
