@@ -31,6 +31,25 @@ const testWebhookPipeline = () => {
     throw new Error('Anomaly detection failed to identify anomalies');
   }
 
+  // Step 2.5: Simulate TinyFish External Web Intelligence
+  const mockExternalEnrichment = {
+    status: 'COMPLETED',
+    query: 'payment-gateway us-east-1 status page outage report',
+    totalResults: 1,
+    retrievedAt: new Date().toISOString(),
+    evidence: [
+      {
+        title: 'AWS Network Status - us-east-1',
+        url: 'https://status.aws.amazon.com/incident-991',
+        snippet: 'Investigating elevated packet loss in us-east-1.',
+        source: 'status.aws.amazon.com',
+        isAuthoritative: true,
+        relevance: 'authoritative_candidate',
+        position: 1
+      }
+    ]
+  };
+
   // Step 3: Simulate initial incident record creation
   const initialIncidentDoc = {
     title: `[${sampleWebhook.source.toUpperCase()}] New Alert Detected`,
@@ -44,6 +63,8 @@ const testWebhookPipeline = () => {
     normalizedTelemetry: normalized,
     anomalies: anomalyReport.anomalies,
     anomalySummary: anomalyReport,
+    externalEvidence: mockExternalEnrichment.evidence,
+    externalEnrichment: mockExternalEnrichment,
     status: 'Investigating'
   };
 
@@ -55,6 +76,7 @@ const testWebhookPipeline = () => {
     source: initialIncidentDoc.source,
     hasRawPayload: !!initialIncidentDoc.rawPayload,
     hasNormalizedTelemetry: !!initialIncidentDoc.normalizedTelemetry,
+    hasExternalEvidence: initialIncidentDoc.externalEvidence.length > 0,
     normalizedMetricCount: Object.keys(initialIncidentDoc.normalizedTelemetry.metrics).length
   });
 
@@ -113,10 +135,12 @@ const testWebhookPipeline = () => {
     aiScore: updatedIncidentDoc.aiScore,
     hasRawPayload: !!updatedIncidentDoc.rawPayload,
     hasNormalizedTelemetry: !!updatedIncidentDoc.normalizedTelemetry,
+    hasExternalEvidence: (updatedIncidentDoc.externalEvidence || []).length > 0,
+    externalEvidenceCount: (updatedIncidentDoc.externalEvidence || []).length,
     metricsAvailable: Object.keys(updatedIncidentDoc.normalizedTelemetry.metrics)
   });
 
-  console.log('\n✅ Pipeline test successfully verified backward compatibility & schema persistence!');
+  console.log('\n✅ Pipeline test successfully verified backward compatibility & schema persistence with TinyFish external enrichment!');
 };
 
 testWebhookPipeline();
