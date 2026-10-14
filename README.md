@@ -28,7 +28,8 @@ graph TD
         P2["Phase 2: Anomaly Scoring 0-100"]
         P3["Phase 3: Multi-Signal Incident Taxonomy"]
         P4["Phase 4: Cross-Signal Correlation & Causal DAG"]
-        P5["Phase 5: Gemini 2.5 Flash Grounded RCA"]
+        TF["NEW: TinyFish Public Web Intelligence Enrichment"]
+        P5["Phase 5: Gemini 2.5 Flash Evidence-Grounded RCA"]
     end
 
     CTRL -->|Modifies State or Injects Failure| ENG
@@ -36,7 +37,7 @@ graph TD
     BE -->|Manifests Failure Behavior| UI
     ENG -->|Raw Metric Observations - No Ground Truth| ADP
     ADP -->|Datadog or Prometheus or K8s Webhooks| P1
-    P1 --> P2 --> P3 --> P4 --> P5
+    P1 --> P2 --> P3 --> P4 --> TF --> P5
 ```
 
 ---
@@ -45,9 +46,10 @@ graph TD
 
 ### SentinelAI (Intelligence Engine)
 - **Deterministic Ground Truth Engine (Phases 1-4):** Normalizes multi-source telemetry, computes bounded anomaly scores (0-100), classifies incident signatures against a 12-type taxonomy, and constructs causal DAGs separating origin from downstream symptoms.
-- **Evidence-Grounded AI Synthesis (Phase 5):** Uses Gemini 2.5 Flash to synthesize structured evidence packages into human-readable engineering narratives, impact assessments, and remediation plans.
+- **External Web Intelligence (Phase 4.5 - TinyFish):** Selectively searches public advisories, official cloud provider status dashboards (AWS, GCP, Azure, Stripe), and vendor advisories when downstream dependencies or external infrastructure degrade. Untrusted web text is safely isolated from internal ground truth.
+- **Evidence-Grounded AI Synthesis (Phase 5):** Uses Gemini 2.5 Flash to synthesize structured evidence packages (telemetry + external corroboration) into human-readable engineering narratives, impact assessments, cited sources, and human-approved remediation plans.
 - **Multi-Source Webhook Adapters:** Native support for Datadog, Prometheus Alertmanager, AWS CloudWatch, and Kubernetes container events.
-- **Operational Cockpit & Copilot:** Real-time Socket.IO dashboard with live KPI counters, incident trends, DAG visualization, and embedded AI copilot chat.
+- **Operational Cockpit & Copilot:** Real-time Socket.IO dashboard with live KPI counters, incident trends, DAG visualization, TinyFish external advisories view, and embedded AI copilot chat.
 
 ### ShopDemo (Production Simulator & Chaos Control)
 - **7 Logical Microservices:** API Gateway, Auth Service, Product Service, Order Service, Payment Service, PostgreSQL Database, and Payment Processor API.
@@ -103,6 +105,7 @@ CODATHON/
 - npm (v9.0.0 or higher)
 - MongoDB instance (local or Atlas URI for SentinelAI)
 - (Optional) Google Gemini API Key (`GEMINI_API_KEY`) in `sentinel-ai/backend/.env`
+- (Optional) TinyFish Web Intelligence API Key (`TINYFISH_API_KEY`) in `sentinel-ai/backend/.env`
 
 ---
 
@@ -143,15 +146,16 @@ npm run dev
 
 ## Automated Verification Test Suites
 
-### SentinelAI Pipeline Tests
+### SentinelAI Pipeline & TinyFish Tests
 ```bash
 cd sentinel-ai/backend
 node src/test-telemetry.js             # Phase 1 Normalization
 node src/test-anomaly-detector.js      # Phase 2 Anomaly Scoring
 node src/test-incident-identifier.js   # Phase 3 Taxonomy Classification
 node src/test-evidence-correlator.js   # Phase 4 Causal DAG Correlation
-node src/test-ai-reasoning.js          # Phase 5 Gemini Reasoning
-node src/test-webhook-e2e.js           # Full End-to-End Pipeline
+node src/test-tinyfish-service.js      # Phase 4.5 TinyFish External Web Intelligence
+node src/test-ai-reasoning.js          # Phase 5 Gemini Grounded Reasoning & Prompt Defense
+node src/test-webhook-e2e.js           # Full End-to-End Pipeline & Enrichment Simulation
 ```
 
 ### ShopDemo Simulator & Isolation Tests
