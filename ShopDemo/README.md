@@ -10,18 +10,18 @@ ShopDemo is a simulated high-throughput e-commerce production application and De
 
 ```mermaid
 graph TD
-    subgraph SHOPDEMO ["SHOPDEMO (Simulated Production Environment)"]
-        UI["Storefront UI & User Actions<br/>(Browsing, Cart, Checkout)"]
-        BE["Backend Microservices Kernel<br/>(API Gateway, Auth, Product, Order, Payment)"]
-        ENG["Simulator Engine<br/>(Baselines, Traffic Loop, 8 Chaos Scenarios)"]
+    subgraph SHOPDEMO ["SHOPDEMO - Simulated Production Environment"]
+        UI["Storefront UI & User Actions<br/>Browsing, Cart, Checkout"]
+        BE["Backend Microservices Kernel<br/>API Gateway, Auth, Product, Order, Payment"]
+        ENG["Simulator Engine<br/>Baselines, Traffic Loop, 8 Chaos Scenarios"]
         ADP["Telemetry Normalization Adapter"]
     end
 
     subgraph CHAOS ["SENTINEL AI CHAOS CONTROL"]
-        CTRL["Chaos Control Panel<br/>(Scenario Ingestion, Blind Test, Reset)"]
+        CTRL["Chaos Control Panel<br/>Scenario Ingestion, Blind Test, Reset"]
     end
 
-    subgraph SENTINEL ["SENTINEL AI (Incident Intelligence Engine)"]
+    subgraph SENTINEL ["SENTINEL AI - Incident Intelligence Engine"]
         P1["Phase 1: Telemetry Normalization"]
         P2["Phase 2: Anomaly Scoring"]
         P3["Phase 3: Incident Identification"]
@@ -29,11 +29,11 @@ graph TD
         P5["Phase 5: Gemini 2.5 Flash RCA"]
     end
 
-    CTRL -->|Modifies State / Injects Failure| ENG
+    CTRL -->|Modifies State or Injects Failure| ENG
     ENG -->|Updates Metrics & Degrades API| BE
     BE -->|Real User Experience Impact| UI
-    ENG -->|Raw Observations (No Ground Truth)| ADP
-    ADP -->|Webhook Payload (Datadog/Prometheus/K8s)| P1
+    ENG -->|Raw Observations - No Ground Truth| ADP
+    ADP -->|Webhook Payload - Datadog Prometheus K8s| P1
     P1 --> P2 --> P3 --> P4 --> P5
 ```
 
