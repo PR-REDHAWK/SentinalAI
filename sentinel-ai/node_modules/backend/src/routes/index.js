@@ -13,8 +13,11 @@ router.get('/health', (req, res) => {
   });
 });
 
+const analyticsRoutes = require('./analyticsRoutes');
+
 router.use('/incidents', incidentRoutes);
 router.use('/users', userRoutes);
 router.use('/webhooks', webhookRoutes);
+router.use('/analytics', analyticsRoutes);
 
 module.exports = router;
