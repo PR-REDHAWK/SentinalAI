@@ -7,6 +7,7 @@ const { detectAnomalies } = require('../services/anomalyDetector');
 const { identifyIncident } = require('../services/incidentIdentifier');
 const { correlateEvidence } = require('../services/evidenceCorrelator');
 const { buildEvidencePackage, reasonOverIncident } = require('../services/ai/geminiReasoningService');
+const { investigateExternalEvidence } = require('../services/tinyFishService');
 
 // Shared handler for all webhooks
 const processWebhook = async (req, res, source) => {
@@ -29,13 +30,32 @@ const processWebhook = async (req, res, source) => {
     // 4. Run cross-signal correlation & root-cause evidence engine (Phase 4)
     const evidenceCorrelation = correlateEvidence(normalizedTelemetry, anomalyReport, incidentIdentification);
 
-    // 5. Construct Phase 5 Structured AI Evidence Package
+    // 4.5 NEW: TinyFish External Public Web Intelligence Enrichment
+    let externalEnrichment = null;
+    try {
+      externalEnrichment = await investigateExternalEvidence(
+        normalizedTelemetry,
+        anomalyReport,
+        incidentIdentification,
+        evidenceCorrelation
+      );
+    } catch (enrichErr) {
+      console.warn('TinyFish enrichment error:', enrichErr.message);
+      externalEnrichment = {
+        status: 'FAILED',
+        error: enrichErr.message,
+        evidence: []
+      };
+    }
+
+    // 5. Construct Phase 5 Structured AI Evidence Package (including external intelligence)
     const evidencePackage = buildEvidencePackage(
       normalizedTelemetry,
       anomalyReport,
       incidentIdentification,
       evidenceCorrelation,
-      payload
+      payload,
+      externalEnrichment
     );
 
     // 6. Create a base incident with deterministic intelligence and PENDING AI status
@@ -57,6 +77,16 @@ const processWebhook = async (req, res, source) => {
       rootCauseCandidates: evidenceCorrelation.rootCauseCandidates || [],
       evidenceClusters: evidenceCorrelation.evidenceClusters || [],
       evidenceChain: evidenceCorrelation.evidenceChain || [],
+      externalEvidence: externalEnrichment?.evidence || [],
+      externalEnrichment: externalEnrichment ? {
+        status: externalEnrichment.status,
+        query: externalEnrichment.query,
+        purpose: externalEnrichment.purpose,
+        totalResults: externalEnrichment.totalResults || 0,
+        retrievedAt: externalEnrichment.retrievedAt,
+        reason: externalEnrichment.reason,
+        error: externalEnrichment.error
+      } : null,
       aiAnalysisStatus: 'PENDING',
       status: 'Investigating'
     });
@@ -73,6 +103,17 @@ const processWebhook = async (req, res, source) => {
       title: `Alert Received: ${incidentIdentification.primaryHypothesis.displayName}`,
       description: `Telemetry normalized & classified as '${incidentIdentification.primaryHypothesis.displayName}' (${incidentIdentification.primaryHypothesis.confidence}% confidence). Leading root cause hypothesis: ${evidenceCorrelation.primaryRootCause.candidate} (${evidenceCorrelation.primaryRootCause.confidence}% confidence).`
     });
+
+    // 8.5 Record timeline event for external intelligence if discovered
+    if (externalEnrichment?.status === 'COMPLETED' && (externalEnrichment.evidence || []).length > 0) {
+      const authCount = externalEnrichment.evidence.filter(e => e.isAuthoritative).length;
+      await TimelineEvent.create({
+        incidentId: initialIncident._id,
+        event: 'enrichment',
+        title: `External Intelligence Discovered (${externalEnrichment.evidence.length} Advisories)`,
+        description: `TinyFish retrieved ${externalEnrichment.evidence.length} public advisories (${authCount} authoritative) for query: "${externalEnrichment.query}".`
+      });
+    }
 
     // 9. Execute Phase 5 Gemini AI Reasoning on the structured evidence package
     let aiResult;
@@ -111,6 +152,9 @@ const processWebhook = async (req, res, source) => {
         rootCauseCandidates: evidenceCorrelation.rootCauseCandidates || [],
         evidenceClusters: evidenceCorrelation.evidenceClusters || [],
         evidenceChain: evidenceCorrelation.evidenceChain || [],
+        externalEvidence: externalEnrichment?.evidence || [],
+        externalEnrichment: externalEnrichment,
+        externalEvidenceAnalysis: aiData.externalEvidenceAnalysis || null,
         aiAnalysisStatus: aiResult.status || 'COMPLETED',
         aiAnalysis: aiData,
         aiAnalyzedAt: aiResult.analyzedAt || new Date(),
@@ -150,7 +194,7 @@ const processWebhook = async (req, res, source) => {
       event: 'ai',
       title: aiResult.status === 'COMPLETED' ? 'AI Grounded RCA Synthesis Complete' : 'AI Reasoning Fallback Applied',
       description: aiResult.status === 'COMPLETED'
-        ? `Gemini synthesized root cause: "${aiData.rootCauseAnalysis?.primaryHypothesis}" (${aiData.rootCauseAnalysis?.confidence}% confidence) based on ${evidenceCorrelation.evidenceClusters.length} evidence clusters.`
+        ? `Gemini synthesized root cause: "${aiData.rootCauseAnalysis?.primaryHypothesis}" (${aiData.rootCauseAnalysis?.confidence}% confidence) grounded in ${evidenceCorrelation.evidenceClusters.length} evidence clusters${aiData.externalEvidenceAnalysis?.status === 'CORROBORATING' ? ' (corroborated by external advisories)' : ''}.`
         : `Deterministic fallback applied (${aiResult.error || 'AI service unavailable'}).`
     });
 

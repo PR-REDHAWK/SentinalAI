@@ -75,6 +75,14 @@ const incidentSchema = new mongoose.Schema({
     type: [mongoose.Schema.Types.Mixed],
     default: [],
   },
+  externalEvidence: {
+    type: [mongoose.Schema.Types.Mixed],
+    default: [],
+  },
+  externalEnrichment: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null,
+  },
   aiAnalysisStatus: {
     type: String,
     enum: ['PENDING', 'COMPLETED', 'FAILED', 'SKIPPED'],
