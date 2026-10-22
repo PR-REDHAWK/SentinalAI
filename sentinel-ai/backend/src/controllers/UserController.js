@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const asyncHandler = require('../middleware/asyncHandler');
 
@@ -13,6 +14,14 @@ const generateToken = (id) => {
 // @route   POST /api/users/register
 // @access  Public
 exports.register = asyncHandler(async (req, res, next) => {
+  if (!process.env.MONGODB_URI || mongoose.connection.readyState === 0) {
+    return res.status(503).json({
+      success: false,
+      message: 'Database is not connected. Please configure the MONGODB_URI environment variable in your Vercel project settings.',
+      errors: []
+    });
+  }
+
   const { name, email, password, role } = req.body;
 
   // Check if user exists
@@ -52,6 +61,14 @@ exports.register = asyncHandler(async (req, res, next) => {
 // @route   POST /api/users/login
 // @access  Public
 exports.login = asyncHandler(async (req, res, next) => {
+  if (!process.env.MONGODB_URI || mongoose.connection.readyState === 0) {
+    return res.status(503).json({
+      success: false,
+      message: 'Database is not connected. Please configure the MONGODB_URI environment variable in your Vercel project settings.',
+      errors: []
+    });
+  }
+
   const { email, password } = req.body;
 
   // Validate email & password

@@ -41,7 +41,10 @@ import {
   ShieldCheck
 } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL ||
+  (typeof window !== 'undefined' && window.location.port === '5173'
+    ? 'http://localhost:5000'
+    : '');
 
 export const IncidentDetail = () => {
   const { id } = useParams();
