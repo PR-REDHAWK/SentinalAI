@@ -570,7 +570,9 @@ export const ChaosControlPage = () => {
 
               <div className="flex items-center justify-between">
                 <span className="text-gray-400">Target Endpoint:</span>
-                <span className="text-gray-300">http://localhost:5000</span>
+                <span className="text-gray-300 truncate max-w-[200px]" title={sentinelStatus?.targetUrl || 'Internal SentinelAI Binding'}>
+                  {sentinelStatus?.targetUrl || 'Internal SentinelAI Binding'}
+                </span>
               </div>
 
               <div className="flex items-center justify-between">
@@ -591,7 +593,7 @@ export const ChaosControlPage = () => {
           </div>
 
           <a
-            href="http://localhost:5173"
+            href={import.meta.env.VITE_SENTINEL_DASHBOARD_URL || (typeof window !== 'undefined' && window.location.port === '5174' ? 'http://localhost:5173' : '/sentinel')}
             target="_blank"
             rel="noreferrer"
             className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center space-x-2 transition-colors"

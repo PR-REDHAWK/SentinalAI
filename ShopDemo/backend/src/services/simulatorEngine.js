@@ -11,7 +11,7 @@ const EventEmitter = require('events');
 class SimulatorEngine extends EventEmitter {
   constructor() {
     super();
-    this.sentinelUrl = process.env.SENTINEL_URL || 'http://localhost:5000';
+    this._sentinelUrl = process.env.SENTINEL_URL || 'http://localhost:5000';
     this.timer = null;
     this.statsHistory = [];
     this.logsHistory = [];
@@ -24,6 +24,14 @@ class SimulatorEngine extends EventEmitter {
       lastResponse: null
     };
     this.resetState();
+  }
+
+  get sentinelUrl() {
+    return process.env.SENTINEL_URL || this._sentinelUrl || 'http://localhost:5000';
+  }
+
+  set sentinelUrl(val) {
+    this._sentinelUrl = val;
   }
 
   resetState() {
@@ -396,7 +404,10 @@ class SimulatorEngine extends EventEmitter {
       metrics: this.currentMetrics,
       baselines: this.baselines,
       services: this.services,
-      sentinelStatus: this.sentinelStatus,
+      sentinelStatus: {
+        ...this.sentinelStatus,
+        targetUrl: this.sentinelStatus.targetUrl || this.sentinelUrl
+      },
       recentLogs: this.logsHistory.slice(0, 15),
       recentEvents: this.eventsHistory.slice(0, 10),
       statsHistory: this.statsHistory

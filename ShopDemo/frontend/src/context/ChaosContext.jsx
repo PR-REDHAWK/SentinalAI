@@ -4,8 +4,14 @@ import axios from 'axios';
 
 const ChaosContext = createContext();
 
-const CHAOS_API_BASE = 'http://localhost:5100/api/chaos';
-const SOCKET_URL = 'http://localhost:5100';
+const CHAOS_API_BASE = import.meta.env.VITE_CHAOS_API_URL ||
+  (typeof window !== 'undefined' && window.location.port === '5174'
+    ? 'http://localhost:5100/api/chaos'
+    : '/api/chaos');
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL ||
+  (typeof window !== 'undefined' && window.location.port === '5174'
+    ? 'http://localhost:5100'
+    : '');
 
 export const ChaosProvider = ({ children }) => {
   const [simulationState, setSimulationState] = useState(null);

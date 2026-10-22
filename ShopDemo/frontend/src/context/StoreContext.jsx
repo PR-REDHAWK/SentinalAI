@@ -3,7 +3,10 @@ import axios from 'axios';
 
 const StoreContext = createContext();
 
-const API_BASE = 'http://localhost:5100/api/shop';
+const API_BASE = import.meta.env.VITE_SHOP_API_URL ||
+  (typeof window !== 'undefined' && window.location.port === '5174'
+    ? 'http://localhost:5100/api/shop'
+    : '/api/shop');
 
 export const StoreProvider = ({ children }) => {
   const [products, setProducts] = useState([]);

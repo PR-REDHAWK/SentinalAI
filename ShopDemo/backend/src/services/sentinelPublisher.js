@@ -17,6 +17,13 @@ class SentinelPublisher {
     this.engine.on('dispatch-telemetry', () => this.handleDispatch());
   }
 
+  getSentinelUrl(endpointPath = '') {
+    const rawUrl = process.env.SENTINEL_URL || this.sentinelBaseUrl || 'http://localhost:5000';
+    const baseUrl = rawUrl.endsWith('/') ? rawUrl : `${rawUrl}/`;
+    const cleanPath = endpointPath.replace(/^\//, '');
+    return new URL(cleanPath, baseUrl).toString();
+  }
+
   async handleDispatch() {
     const now = Date.now();
     // Debounce to max once per 5 seconds to avoid flooding SentinelAI
@@ -34,7 +41,7 @@ class SentinelPublisher {
     };
 
     const endpoint = sourcePathMap[formatted.source] || '/api/webhooks/datadog';
-    const targetUrl = `${this.sentinelBaseUrl}${endpoint}`;
+    const targetUrl = this.getSentinelUrl(endpoint);
 
     try {
       const response = await axios.post(targetUrl, formatted.payload, {
@@ -44,6 +51,7 @@ class SentinelPublisher {
 
       this.engine.sentinelStatus = {
         connected: true,
+        targetUrl,
         lastSent: new Date().toISOString(),
         totalEventsSent: (this.engine.sentinelStatus.totalEventsSent || 0) + 1,
         anomaliesObserved: (this.engine.sentinelStatus.anomaliesObserved || 0) + (fullState.scenarioStage >= 2 ? 1 : 0),
@@ -54,6 +62,7 @@ class SentinelPublisher {
     } catch (err) {
       this.engine.sentinelStatus = {
         connected: false,
+        targetUrl,
         lastSent: new Date().toISOString(),
         totalEventsSent: this.engine.sentinelStatus.totalEventsSent || 0,
         anomaliesObserved: this.engine.sentinelStatus.anomaliesObserved || 0,
@@ -65,7 +74,8 @@ class SentinelPublisher {
 
   async testConnection() {
     try {
-      const res = await axios.get(`${this.sentinelBaseUrl}/api/health`, { timeout: 2000 });
+      const targetUrl = this.getSentinelUrl('api/health');
+      const res = await axios.get(targetUrl, { timeout: 2000 });
       return { connected: true, data: res.data };
     } catch (err) {
       return { connected: false, error: err.message };
