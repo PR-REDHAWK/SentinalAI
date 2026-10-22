@@ -8,35 +8,19 @@
     "sentinel-frontend": {
       "root": "sentinel-ai/frontend",
       "framework": "vite"
-    },
-    "shop-backend": {
-      "root": "ShopDemo/backend",
-      "framework": "express",
-      "bindings": [
-        {
-          "type": "service",
-          "service": "sentinel-backend",
-          "format": "url",
-          "env": "SENTINEL_URL"
-        }
-      ]
-    },
-    "shop-frontend": {
-      "root": "ShopDemo/frontend",
-      "framework": "vite"
     }
   },
   "rewrites": [
     {
       "source": "/api/(.*)",
       "destination": {
-        "service": "shop-backend"
+        "service": "sentinel-backend"
       }
     },
     {
       "source": "/(.*)",
       "destination": {
-        "service": "shop-frontend"
+        "service": "sentinel-frontend"
       }
     }
   ]
