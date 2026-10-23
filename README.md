@@ -1,4 +1,4 @@
-# SentinelAI & ShopDemo Suite
+# SentinelAI Suite
 
 ### Autonomous AI Teammate for E-Commerce Reliability, Sales Continuity & Production Chaos Simulation
 
@@ -8,12 +8,9 @@
 
 ---
 
-## 🎯 Hackathon Mission: AI Teammates That Get The Job Done
 
-> **The Hackathon Mandate:**
-> *"Build AI teammates that don't just respond; they get the job done. Design an AI teammate that can go beyond answering questions and deliver measurable outcomes in sales or customer service. The AI should understand context, make decisions, take actions, and work alongside human teams. How might we build an AI teammate that can independently handle a customer-service or sales workflow end-to-end — resolving issues, taking actions across systems, and escalating to humans only when needed?"*
 
-### Why SentinelAI + ShopDemo Conquers This Requirement
+### Why SentinelAI is Different
 
 In modern digital commerce, **sales conversion and customer service directly depend on the health of the underlying checkout and transaction pipeline**. When an API gateway falters, a database connection pool runs dry, or an external payment processor throttles traffic:
 - **Sales Halt Instantly:** High-intent shoppers face spinning loaders, timed-out payment screens, and cart abandonments, leading to direct top-line revenue loss.
@@ -57,7 +54,7 @@ sequenceDiagram
 
 ---
 
-### How We Solve the 5 Hackathon Criteria
+### How We Solve the big 5 problems:
 
 | Requirement | What Traditional AI Does | How the SentinelAI Teammate Delivers | Measurable Business Outcome |
 | :--- | :--- | :--- | :--- |
