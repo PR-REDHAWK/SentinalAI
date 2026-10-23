@@ -8,7 +8,9 @@ const app = require('./app');
 const connectDB = require('./config/db');
 
 // Connect to database
-connectDB();
+connectDB().catch(err => {
+  console.warn("Initial DB connection warning:", err.message);
+});
 
 const PORT = process.env.PORT || 5000;
 
@@ -35,14 +37,22 @@ io.on('connection', (socket) => {
   });
 });
 
-// Start the server
-server.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-});
+// Start the server if not running in serverless environment
+if (require.main === module || !process.env.VERCEL) {
+  server.listen(PORT, () => {
+    console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  });
+}
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
   console.log(`Error: ${err.message}`);
-  // Close server & exit process
-  server.close(() => process.exit(1));
+  if (!process.env.VERCEL) {
+    server.close(() => process.exit(1));
+  }
 });
+
+module.exports = app;
+module.exports.server = server;
+module.exports.app = app;
+

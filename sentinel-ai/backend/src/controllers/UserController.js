@@ -10,17 +10,31 @@ const generateToken = (id) => {
   });
 };
 
+const connectDB = require('../config/db');
+
+const ensureDBConnected = async () => {
+  if (!process.env.MONGODB_URI) {
+    throw new Error('MONGODB_URI environment variable is not defined in Vercel project settings. Please add it and redeploy.');
+  }
+  if (mongoose.connection.readyState !== 1) {
+    await connectDB();
+  }
+};
+
 // @desc    Register user
 // @route   POST /api/users/register
 // @access  Public
 exports.register = asyncHandler(async (req, res, next) => {
-  if (!process.env.MONGODB_URI || mongoose.connection.readyState === 0) {
+  try {
+    await ensureDBConnected();
+  } catch (err) {
     return res.status(503).json({
       success: false,
-      message: 'Database is not connected. Please configure the MONGODB_URI environment variable in your Vercel project settings.',
+      message: `Database connection error: ${err.message}. If using MongoDB Atlas, make sure you allowed IP 0.0.0.0/0 in Atlas Network Access.`,
       errors: []
     });
   }
+
 
   const { name, email, password, role } = req.body;
 
@@ -61,10 +75,12 @@ exports.register = asyncHandler(async (req, res, next) => {
 // @route   POST /api/users/login
 // @access  Public
 exports.login = asyncHandler(async (req, res, next) => {
-  if (!process.env.MONGODB_URI || mongoose.connection.readyState === 0) {
+  try {
+    await ensureDBConnected();
+  } catch (err) {
     return res.status(503).json({
       success: false,
-      message: 'Database is not connected. Please configure the MONGODB_URI environment variable in your Vercel project settings.',
+      message: `Database connection error: ${err.message}. If using MongoDB Atlas, make sure you allowed IP 0.0.0.0/0 in Atlas Network Access.`,
       errors: []
     });
   }
