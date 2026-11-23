@@ -109,12 +109,19 @@ graph TD
 - **Multi-Source Webhook Adapters:** Native support for Datadog, Prometheus Alertmanager, AWS CloudWatch, and Kubernetes container events.
 - **Operational Cockpit & Copilot:** Real-time Socket.IO dashboard with live KPI counters, incident trends, DAG visualization, TinyFish external advisories view, and embedded AI copilot chat.
 
-### ShopDemo (Production Simulator & Chaos Control)
-- **7 Logical Microservices:** API Gateway, Auth Service, Product Service, Order Service, Payment Service, PostgreSQL Database, and Payment Processor API.
-- **8 Progressive Chaos Scenarios:** Traffic Spike, Database Degradation, DB Connection Exhaustion, Payment Dependency Failure, Memory Leak, Deployment Regression, Container Failure, and High Error Rate.
-- **Ground-Truth Isolation Contract:** ShopDemo NEVER sends internal scenario labels or `groundTruth` to SentinelAI. SentinelAI must independently infer root causes from raw observations.
-- **Blind Incident Simulation Mode:** Test SentinelAI's autonomous reasoning against hidden chaos scenarios and reveal ground truth side-by-side.
-- **Failure Visualization:** ShopDemo storefront experiences genuine performance degradation (slow loading, payment timeouts, 500 errors) when chaos is injected.
+### ShopDemo (Production Simulation & Chaos Engineering Platform)
+
+- **Distributed Microservices Architecture:** Simulates a production-grade e-commerce environment consisting of seven components: API Gateway, Authentication Service, Product Service, Order Service, Payment Service, PostgreSQL Database, and Payment Processor API.
+
+- **Eight Realistic Failure Scenarios:** Supports progressive chaos injection, including Traffic Spikes, Database Degradation, Connection Pool Exhaustion, Payment Service Failures, Memory Leaks, Deployment Regressions, Container Crashes, and Elevated Error Rates.
+
+- **Strict Ground-Truth Isolation:** Maintains complete separation between ShopDemo and SentinelAI. Internal chaos scenario labels and ground-truth information are never exposed to SentinelAI, ensuring unbiased root-cause analysis.
+
+- **Blind Incident Testing:** Introduces hidden production incidents to evaluate SentinelAI's ability to independently detect anomalies, identify root causes, correlate system metrics, and recommend corrective actions.
+
+- **Realistic Failure Propagation & Visualization:** Demonstrates the actual impact of injected failures on the e-commerce storefront, including increased response times, slow page loading, payment timeouts, service disruptions, and HTTP 500 errors.
+
+- **Autonomous Incident Evaluation:** Enables side-by-side comparison of SentinelAI's predicted root cause against the actual hidden failure scenario to measure diagnostic accuracy and incident investigation performance.
 
 ---
 
@@ -206,7 +213,7 @@ npm run dev
 
 ### SentinelAI Pipeline & TinyFish Tests
 ```bash
-cd sentinel-ai/backend
+cd sentinel-ai/Backend
 node src/test-telemetry.js             # Phase 1 Normalization
 node src/test-anomaly-detector.js      # Phase 2 Anomaly Scoring
 node src/test-incident-identifier.js   # Phase 3 Taxonomy Classification
