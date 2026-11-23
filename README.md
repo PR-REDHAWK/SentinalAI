@@ -199,7 +199,7 @@ npm run dev
 5. Open the **SentinelAI Cockpit** (`http://localhost:5173`) to view the real-time incident report, anomaly breakdown, causal DAG, and Gemini 2.5 Flash RCA.
 6. Return to Chaos Control and click **`[ REVEAL GROUND TRUTH ]`** to compare the simulator's hidden ground truth against SentinelAI's autonomous diagnosis.
 7. Click **`[ RESET ENVIRONMENT ]`** to return all services to baseline health.
-
+8.end
 ---
 
 ## Automated Verification Test Suites
