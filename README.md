@@ -213,7 +213,7 @@ npm run dev
 
 ### SentinelAI Pipeline & TinyFish Tests
 ```bash
-cd sentinel-ai/Backend
+cd sentinel-ai/backend
 node src/test-telemetry.js             # Phase 1 Normalization
 node src/test-anomaly-detector.js      # Phase 2 Anomaly Scoring
 node src/test-incident-identifier.js   # Phase 3 Taxonomy Classification
