@@ -41,7 +41,7 @@ export const IncidentTable = ({ incidents = [] }) => {
                 {inc.affectedService}
               </td>
               <td className="py-3.5 px-4">
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-400">
                   <Sparkles className="w-3 h-3" />
                   {inc.confidenceScore}%
                 </span>

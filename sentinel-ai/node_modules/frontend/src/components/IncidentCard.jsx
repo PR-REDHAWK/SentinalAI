@@ -13,10 +13,10 @@ export const IncidentCard = ({ incident }) => {
     >
       <div>
         <div className="flex items-center justify-between gap-2 mb-2">
-          <span className="text-xs font-mono text-indigo-400 font-semibold px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20">
+          <span className="text-xs font-mono text-indigo-400 font-semibold">
             {incident.id}
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <SeverityBadge severity={incident.severity} size="sm" />
             <StatusBadge status={incident.status} size="sm" />
           </div>

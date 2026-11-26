@@ -6,10 +6,18 @@ const webhookRoutes = require('./webhookRoutes');
 const router = express.Router();
 
 // Health Check
+const { getDBStatus } = require('../config/db');
+
 router.get('/health', (req, res) => {
+  const dbStatus = getDBStatus();
   res.status(200).json({
     success: true,
-    status: 'running'
+    status: 'running',
+    database: dbStatus,
+    environment: {
+      isVercel: Boolean(process.env.VERCEL),
+      nodeEnv: process.env.NODE_ENV || 'development'
+    }
   });
 });
 

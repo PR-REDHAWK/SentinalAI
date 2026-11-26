@@ -49,11 +49,12 @@ const API_URL = import.meta.env.VITE_API_URL ||
 export const IncidentDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { incidents, updateIncidentStatus } = useIncidents();
+  const { incidents, updateIncidentStatus, addToast } = useIncidents();
 
   const incident = incidents.find(inc => inc.id === id) || incidents[0];
 
   const [copiedId, setCopiedId] = useState(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   const [question, setQuestion] = useState('');
   const [chatHistory, setChatHistory] = useState([
     {
@@ -69,13 +70,24 @@ export const IncidentDetail = () => {
   };
 
   const handleStatusChange = async (newStatus) => {
+    if (!incident || incident.status === newStatus || updatingStatus) return;
+
+    const previousStatus = incident.status;
+    setUpdatingStatus(true);
+    updateIncidentStatus(incident.id, newStatus);
+
     try {
-      const updatedData = { ...incident, status: newStatus };
-      await axios.put(`${API_URL}/api/incidents/${incident.id}`, updatedData);
-      // Socket.IO will broadcast the 'incident-updated' event, but we can also optimistically update local state:
-      updateIncidentStatus(incident.id, newStatus);
+      await axios.put(`${API_URL}/api/incidents/${incident.id}`, { status: newStatus });
     } catch (err) {
       console.error("Failed to update status:", err);
+      updateIncidentStatus(incident.id, previousStatus);
+      addToast?.({
+        title: 'Status Update Failed',
+        description: err.response?.data?.message || 'Could not save incident status change.',
+        type: 'alert'
+      });
+    } finally {
+      setUpdatingStatus(false);
     }
   };
 
@@ -105,25 +117,28 @@ export const IncidentDetail = () => {
   return (
     <div className="space-y-6">
       {/* Top Navigation */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <button
+          type="button"
           onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Incidents
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-slate-400 font-medium">Update Status:</span>
           {['Investigating', 'Mitigated', 'Resolved'].map((st) => (
             <button
               key={st}
+              type="button"
+              disabled={updatingStatus}
               onClick={() => handleStatusChange(st)}
-              className={`px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer disabled:opacity-60 ${
                 incident.status === st
                   ? 'bg-indigo-600 text-white border-indigo-500 shadow-md'
-                  : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200'
+                  : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200 hover:bg-slate-800/80'
               }`}
             >
               {st}
@@ -133,10 +148,10 @@ export const IncidentDetail = () => {
       </div>
 
       {/* Main Banner Header */}
-      <div className="glass-panel rounded-xl p-6 border border-slate-800 space-y-4">
+      <div className="glass-panel rounded-xl p-6 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="font-mono text-sm font-bold text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-lg border border-indigo-500/30">
+          <div className="flex items-center gap-4">
+            <span className="font-mono text-sm font-bold text-indigo-400">
               {incident.id}
             </span>
             <SeverityBadge severity={incident.severity} />
@@ -153,30 +168,30 @@ export const IncidentDetail = () => {
         {/* Quick Attributes */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-3 border-t border-slate-800/80 text-xs">
           <div>
-            <span className="text-slate-500 block text-[10px] uppercase font-mono">Affected Service</span>
+            <span className="text-slate-500 block text-xs">Affected Service</span>
             <span className="font-semibold text-slate-200 flex items-center gap-1.5 mt-0.5">
               <Cpu className="w-3.5 h-3.5 text-indigo-400" />
               {incident.affectedService}
             </span>
           </div>
           <div>
-            <span className="text-slate-500 block text-[10px] uppercase font-mono">Geographic Region</span>
+            <span className="text-slate-500 block text-xs">Geographic Region</span>
             <span className="font-semibold text-slate-200 flex items-center gap-1.5 mt-0.5">
               <Globe className="w-3.5 h-3.5 text-indigo-400" />
               {incident.region}
             </span>
           </div>
           <div>
-            <span className="text-slate-500 block text-[10px] uppercase font-mono">Impacted Users</span>
+            <span className="text-slate-500 block text-xs">Impacted Users</span>
             <span className="font-semibold text-slate-200 flex items-center gap-1.5 mt-0.5">
               <Users className="w-3.5 h-3.5 text-indigo-400" />
               {incident.impactedUsers ? incident.impactedUsers.toLocaleString() : 'N/A'}
             </span>
           </div>
           <div>
-            <span className="text-slate-500 block text-[10px] uppercase font-mono">AI Confidence Score</span>
-            <span className="font-semibold text-purple-400 flex items-center gap-1.5 mt-0.5">
-              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+            <span className="text-slate-500 block text-xs">AI Confidence Score</span>
+            <span className="font-semibold text-indigo-400 flex items-center gap-1.5 mt-0.5">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
               {incident.confidenceScore}% Score
             </span>
           </div>
@@ -188,8 +203,8 @@ export const IncidentDetail = () => {
         {/* Left Column (2 Cols) */}
         <div className="lg:col-span-2 space-y-6">
           {/* AI Executive Summary Card */}
-          <div className="glass-panel rounded-xl p-5 border border-purple-500/20 space-y-3 relative overflow-hidden">
-            <div className="flex items-center gap-2 text-purple-400">
+          <div className="glass-panel rounded-xl p-5 space-y-3 relative overflow-hidden">
+            <div className="flex items-center gap-2 text-indigo-400">
               <BrainCircuit className="w-5 h-5" />
               <h2 className="text-base font-bold text-slate-100">AI Incident Summary</h2>
             </div>
@@ -198,57 +213,54 @@ export const IncidentDetail = () => {
 
           {/* Phase 2: Detected Telemetry Anomalies Card */}
           {incident.anomalies && incident.anomalies.length > 0 && (
-            <div className="glass-panel rounded-xl p-5 border border-indigo-500/20 space-y-4">
+            <div className="glass-panel rounded-xl p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-indigo-400">
                   <Activity className="w-5 h-5" />
                   <h2 className="text-base font-bold text-slate-100">Detected Telemetry Anomalies</h2>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-mono font-semibold flex items-center gap-1.5">
-                  <TrendingUp className="w-3.5 h-3.5" />
+                <span className="text-slate-400 text-xs font-mono font-semibold flex items-center gap-1.5">
+                  <TrendingUp className="w-3.5 h-3.5 text-indigo-400" />
                   {incident.anomalies.length} Anomalous Signal{incident.anomalies.length > 1 ? 's' : ''}
                 </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {incident.anomalies.map((ano, idx) => {
-                  const severityStyle = {
-                    CRITICAL: 'bg-red-950/40 border-red-500/30 text-red-400 badge-critical',
-                    HIGH: 'bg-orange-950/40 border-orange-500/30 text-orange-400 badge-high',
-                    MEDIUM: 'bg-amber-950/40 border-amber-500/30 text-amber-400 badge-medium',
-                    LOW: 'bg-blue-950/40 border-blue-500/30 text-blue-400 badge-low',
-                    NORMAL: 'bg-emerald-950/40 border-emerald-500/30 text-emerald-400 badge-normal'
-                  }[ano.severity] || 'bg-slate-900 border-slate-800 text-slate-400';
+                  const severityText = {
+                    CRITICAL: 'text-red-400',
+                    HIGH: 'text-orange-400',
+                    MEDIUM: 'text-amber-400',
+                    LOW: 'text-blue-400',
+                    NORMAL: 'text-emerald-400'
+                  }[ano.severity] || 'text-slate-400';
 
-                  const badgeDot = {
-                    CRITICAL: '🔴',
-                    HIGH: '🟠',
-                    MEDIUM: '🟡',
-                    LOW: '🔵',
-                    NORMAL: '🟢'
-                  }[ano.severity] || '⚪';
+                  const dotColor = {
+                    CRITICAL: 'bg-red-500',
+                    HIGH: 'bg-orange-500',
+                    MEDIUM: 'bg-amber-500',
+                    LOW: 'bg-blue-500',
+                    NORMAL: 'bg-emerald-500'
+                  }[ano.severity] || 'bg-slate-500';
 
                   return (
                     <div 
                       key={idx} 
-                      className="p-3.5 rounded-lg bg-slate-900/80 border border-slate-800 space-y-2.5 hover:border-slate-700 transition-colors"
+                      className="p-3.5 rounded-lg bg-slate-900/80 space-y-2.5"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                          <span>{badgeDot}</span>
+                        <span className="text-xs font-bold text-slate-200 flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${dotColor}`} />
                           {ano.metricDisplayName || ano.metric}
                         </span>
-                        <div className="flex items-center gap-1.5">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${severityStyle}`}>
-                            {ano.severity}
-                          </span>
-                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-mono font-semibold">
-                            {ano.anomalyScore}/100
-                          </span>
+                        <div className="flex items-center gap-2 text-[11px] font-mono font-semibold">
+                          <span className={severityText}>{ano.severity}</span>
+                          <span className="text-slate-500">/</span>
+                          <span className="text-slate-300">{ano.anomalyScore}/100</span>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between text-xs font-mono bg-slate-950/60 px-2.5 py-1.5 rounded border border-slate-800/60">
+                      <div className="flex items-center justify-between text-xs font-mono bg-slate-950/60 px-2.5 py-1.5 rounded">
                         <span className="text-slate-400">
                           Observed: <strong className="text-slate-200">{ano.current}{ano.unit === 'percent' ? '%' : ano.unit ? ` ${ano.unit}` : ''}</strong>
                         </span>
@@ -269,38 +281,31 @@ export const IncidentDetail = () => {
 
           {/* Phase 3: Detected Incident Hypotheses Card */}
           {incident.identifiedIncident && (
-            <div className="glass-panel rounded-xl p-5 border border-indigo-500/30 space-y-4">
+            <div className="glass-panel rounded-xl p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-indigo-400">
                   <ShieldAlert className="w-5 h-5" />
                   <h2 className="text-base font-bold text-slate-100">Detected Incident Hypothesis</h2>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-mono font-semibold flex items-center gap-1">
-                  <Layers className="w-3.5 h-3.5" />
+                <span className="text-slate-400 text-xs font-mono flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-indigo-400" />
                   Multi-Signal Evidence Correlation
                 </span>
               </div>
 
               {/* Primary Most Likely Hypothesis */}
-              <div className="p-4 rounded-xl bg-slate-900/90 border border-indigo-500/30 space-y-3">
+              <div className="p-4 rounded-xl bg-slate-900/90 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <span className="text-[10px] uppercase font-mono tracking-wider text-indigo-400 block font-semibold">
-                      Most Likely Incident Category
-                    </span>
-                    <h3 className="text-lg font-bold text-slate-100 mt-0.5">
-                      {incident.identifiedIncident.displayName || incident.identifiedIncident.incidentType}
-                    </h3>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold border ${
-                      incident.identifiedIncident.confidence >= 80 
-                        ? 'bg-emerald-950/50 border-emerald-500/40 text-emerald-300' 
-                        : 'bg-amber-950/50 border-amber-500/40 text-amber-300'
-                    }`}>
-                      {incident.identifiedIncident.confidence}% Confidence
-                    </span>
-                  </div>
+                  <h3 className="text-lg font-bold text-slate-100">
+                    {incident.identifiedIncident.displayName || incident.identifiedIncident.incidentType}
+                  </h3>
+                  <span className={`text-xs font-mono font-bold ${
+                    incident.identifiedIncident.confidence >= 80 
+                      ? 'text-emerald-400' 
+                      : 'text-amber-400'
+                  }`}>
+                    {incident.identifiedIncident.confidence}% Confidence
+                  </span>
                 </div>
 
                 <p className="text-xs text-slate-300 leading-relaxed">
@@ -310,13 +315,13 @@ export const IncidentDetail = () => {
                 {/* Supporting Signals Breakdown */}
                 {incident.identifiedIncident.supportingEvidence && incident.identifiedIncident.supportingEvidence.length > 0 && (
                   <div className="space-y-2 pt-2 border-t border-slate-800">
-                    <span className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider block font-mono">
-                      Correlated Supporting Signals:
+                    <span className="text-xs font-semibold text-slate-300 block">
+                      Correlated Supporting Signals
                     </span>
                     <div className="space-y-1.5">
                       {incident.identifiedIncident.supportingEvidence.map((ev, idx) => (
-                        <div key={idx} className="text-xs text-slate-400 flex items-start gap-2 bg-slate-950/50 p-2 rounded border border-slate-800/80">
-                          <span className="text-indigo-400 font-mono text-[10px] shrink-0 mt-0.5 font-bold">+{ev.weight}pts</span>
+                        <div key={idx} className="text-xs text-slate-400 flex items-start gap-2 bg-slate-950/50 p-2 rounded">
+                          <span className="text-indigo-400 font-mono text-[11px] shrink-0 font-bold">+{ev.weight}pts</span>
                           <span className="text-slate-300">{ev.description}</span>
                         </div>
                       ))}
@@ -327,13 +332,13 @@ export const IncidentDetail = () => {
                 {/* Contradicting Signals (if any) */}
                 {incident.identifiedIncident.contradictingEvidence && incident.identifiedIncident.contradictingEvidence.length > 0 && (
                   <div className="space-y-2 pt-2 border-t border-slate-800">
-                    <span className="text-[11px] font-semibold text-amber-400 uppercase tracking-wider block font-mono">
-                      Contradicting Evidence:
+                    <span className="text-xs font-semibold text-amber-400 block">
+                      Contradicting Evidence
                     </span>
                     <div className="space-y-1.5">
                       {incident.identifiedIncident.contradictingEvidence.map((ev, idx) => (
-                        <div key={idx} className="text-xs text-amber-300/80 flex items-start gap-2 bg-amber-950/20 p-2 rounded border border-amber-500/20">
-                          <span className="text-amber-400 font-mono text-[10px] shrink-0 mt-0.5 font-bold">{ev.weight}pts</span>
+                        <div key={idx} className="text-xs text-amber-300/80 flex items-start gap-2 bg-amber-950/20 p-2 rounded">
+                          <span className="text-amber-400 font-mono text-[11px] shrink-0 font-bold">{ev.weight}pts</span>
                           <span>{ev.description}</span>
                         </div>
                       ))}
@@ -345,14 +350,14 @@ export const IncidentDetail = () => {
               {/* Alternative Hypotheses */}
               {incident.incidentHypotheses && incident.incidentHypotheses.length > 1 && (
                 <div className="space-y-2">
-                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block font-mono">
-                    Alternative Plausible Hypotheses:
+                  <span className="text-xs font-semibold text-slate-400 block">
+                    Alternative Plausible Hypotheses
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {incident.incidentHypotheses.slice(1).map((alt, idx) => (
-                      <div key={idx} className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 flex items-center justify-between text-xs">
+                      <div key={idx} className="p-2.5 rounded-lg bg-slate-950/60 flex items-center justify-between text-xs">
                         <span className="text-slate-300 font-medium">{alt.displayName || alt.incidentType}</span>
-                        <span className="font-mono text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded text-[10px] font-semibold">
+                        <span className="font-mono text-slate-400 text-xs font-semibold">
                           {alt.confidence}%
                         </span>
                       </div>
@@ -365,34 +370,30 @@ export const IncidentDetail = () => {
 
           {/* Phase 4: Why SentinelAI Thinks This (Evidence Chain & Root Cause) */}
           {incident.primaryRootCause && (
-            <div className="glass-panel rounded-xl p-5 border border-purple-500/30 space-y-5">
+            <div className="glass-panel rounded-xl p-5 space-y-5">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-purple-400">
+                <div className="flex items-center gap-2 text-indigo-400">
                   <Network className="w-5 h-5" />
                   <h2 className="text-base font-bold text-slate-100">Why SentinelAI Thinks This</h2>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-mono font-semibold flex items-center gap-1.5">
-                  <Compass className="w-3.5 h-3.5" />
+                <span className="text-slate-400 text-xs font-mono flex items-center gap-1.5">
+                  <Compass className="w-3.5 h-3.5 text-indigo-400" />
                   Cross-Signal Evidence Correlation
                 </span>
               </div>
 
               {/* Probable Root Cause Banner */}
-              <div className="p-4 rounded-xl bg-slate-900/90 border border-purple-500/30 space-y-3">
+              <div className="p-4 rounded-xl bg-slate-900/90 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <span className="text-[10px] uppercase font-mono tracking-wider text-purple-400 block font-semibold">
-                      Probable Root Cause Hypothesis
-                    </span>
-                    <h3 className="text-lg font-bold text-slate-100 mt-0.5">
-                      {incident.primaryRootCause.candidate}
-                    </h3>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-purple-950/60 border border-purple-500/40 text-purple-300">
+                  <h3 className="text-lg font-bold text-slate-100">
+                    {incident.primaryRootCause.candidate}
+                  </h3>
+                  <div className="flex items-center gap-3 text-xs font-mono font-bold">
+                    <span className="text-indigo-400">
                       {incident.primaryRootCause.confidence}% Confidence
                     </span>
-                    <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                    <span className="text-slate-500">/</span>
+                    <span className="text-slate-300">
                       {incident.primaryRootCause.status}
                     </span>
                   </div>
@@ -403,9 +404,9 @@ export const IncidentDetail = () => {
                 </p>
 
                 {incident.primaryRootCause.suspectedOrigin && (
-                  <div className="flex flex-wrap items-center gap-4 text-xs font-mono bg-slate-950/70 p-2.5 rounded-lg border border-slate-800">
+                  <div className="flex flex-wrap items-center gap-4 text-xs font-mono bg-slate-950/70 p-2.5 rounded-lg">
                     <div className="text-slate-400">
-                      Suspected Origin Service: <strong className="text-purple-300">{incident.primaryRootCause.suspectedOrigin.service}</strong>
+                      Suspected Origin Service: <strong className="text-indigo-300">{incident.primaryRootCause.suspectedOrigin.service}</strong>
                     </div>
                     {incident.primaryRootCause.suspectedOrigin.component && (
                       <div className="text-slate-400">
@@ -419,12 +420,12 @@ export const IncidentDetail = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-800/80">
                   {/* Supporting Evidence */}
                   <div className="space-y-1.5">
-                    <span className="text-[10px] uppercase font-mono font-semibold text-emerald-400 block">
+                    <span className="text-xs font-semibold text-emerald-400 block">
                       Supporting Evidence ({incident.primaryRootCause.supportingEvidence?.length || 0})
                     </span>
                     {incident.primaryRootCause.supportingEvidence?.map((item, idx) => (
-                      <div key={idx} className="text-xs text-slate-300 bg-slate-950/60 p-2 rounded border border-slate-800/80 flex items-start gap-1.5">
-                        <span className="text-emerald-400 shrink-0">✓</span>
+                      <div key={idx} className="text-xs text-slate-300 bg-slate-950/60 p-2 rounded flex items-start gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
                         <span>{item}</span>
                       </div>
                     ))}
@@ -432,18 +433,18 @@ export const IncidentDetail = () => {
 
                   {/* Contradicting Evidence */}
                   <div className="space-y-1.5">
-                    <span className="text-[10px] uppercase font-mono font-semibold text-amber-400 block">
+                    <span className="text-xs font-semibold text-amber-400 block">
                       Contradicting Signals ({incident.primaryRootCause.contradictingEvidence?.length || 0})
                     </span>
                     {incident.primaryRootCause.contradictingEvidence && incident.primaryRootCause.contradictingEvidence.length > 0 ? (
                       incident.primaryRootCause.contradictingEvidence.map((item, idx) => (
-                        <div key={idx} className="text-xs text-amber-300 bg-amber-950/20 p-2 rounded border border-amber-500/20 flex items-start gap-1.5">
-                          <span className="text-amber-400 shrink-0">⚠</span>
+                        <div key={idx} className="text-xs text-amber-300 bg-amber-950/20 p-2 rounded flex items-start gap-2">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
                           <span>{item}</span>
                         </div>
                       ))
                     ) : (
-                      <div className="text-xs text-slate-500 italic p-2 bg-slate-950/40 rounded border border-slate-800/40">
+                      <div className="text-xs text-slate-500 italic p-2 bg-slate-950/40 rounded">
                         No contradictory signals detected.
                       </div>
                     )}
@@ -455,33 +456,33 @@ export const IncidentDetail = () => {
               {incident.evidenceChain && incident.evidenceChain.length > 0 && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-slate-300">
-                    <GitBranch className="w-4 h-4 text-purple-400" />
-                    <h3 className="text-sm font-bold uppercase tracking-wider font-mono">
+                    <GitBranch className="w-4 h-4 text-indigo-400" />
+                    <h3 className="text-sm font-bold text-slate-200">
                       Sequential Evidence Chain
                     </h3>
                   </div>
 
-                  <div className="space-y-2 relative pl-3 border-l-2 border-purple-500/30 ml-2">
+                  <div className="space-y-2 relative pl-3 border-l-2 border-indigo-500/30 ml-2">
                     {incident.evidenceChain.map((step, idx) => {
-                      const stageStyle = {
-                        ORIGIN_SIGNAL: 'text-red-400 border-red-500/30 bg-red-950/30',
-                        PROPAGATION: 'text-amber-400 border-amber-500/30 bg-amber-950/30',
-                        DOWNSTREAM_IMPACT: 'text-indigo-400 border-indigo-500/30 bg-indigo-950/30',
-                        USER_IMPACT: 'text-purple-400 border-purple-500/30 bg-purple-950/30'
-                      }[step.stage] || 'text-slate-400 border-slate-800 bg-slate-900';
+                      const stageColor = {
+                        ORIGIN_SIGNAL: 'text-red-400',
+                        PROPAGATION: 'text-amber-400',
+                        DOWNSTREAM_IMPACT: 'text-indigo-400',
+                        USER_IMPACT: 'text-sky-400'
+                      }[step.stage] || 'text-slate-400';
 
                       return (
-                        <div key={idx} className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 relative space-y-1">
+                        <div key={idx} className="p-3 rounded-lg bg-slate-900/80 relative space-y-1">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-300 flex items-center justify-center text-[10px] font-mono font-bold">
+                              <span className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-[10px] font-mono font-bold">
                                 {step.step}
                               </span>
                               <span className="text-xs font-bold text-slate-200">
                                 {step.title}
                               </span>
                             </div>
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold border ${stageStyle}`}>
+                            <span className={`text-[11px] font-mono font-semibold ${stageColor}`}>
                               {step.stage}
                             </span>
                           </div>
@@ -501,15 +502,15 @@ export const IncidentDetail = () => {
               {/* Evidence Clusters */}
               {incident.evidenceClusters && incident.evidenceClusters.length > 0 && (
                 <div className="space-y-2 pt-2 border-t border-slate-800">
-                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block font-mono">
-                    Correlated Evidence Clusters:
+                  <span className="text-xs font-semibold text-slate-400 block">
+                    Correlated Evidence Clusters
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {incident.evidenceClusters.map((cluster, idx) => (
-                      <div key={idx} className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 space-y-1 text-xs">
+                      <div key={idx} className="p-2.5 rounded-lg bg-slate-950/60 space-y-1 text-xs">
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-purple-300 font-mono">{cluster.category}</span>
-                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-mono font-semibold">
+                          <span className="font-bold text-indigo-300 font-mono">{cluster.category}</span>
+                          <span className="text-slate-400 text-xs font-mono font-semibold">
                             {cluster.strength}% Strength
                           </span>
                         </div>
@@ -523,37 +524,37 @@ export const IncidentDetail = () => {
           )}
 
           {/* Root Cause Analysis (RCA) Card */}
-          <div className="glass-panel rounded-xl p-5 border border-slate-800 space-y-4">
+          <div className="glass-panel rounded-xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <BrainCircuit className="w-5 h-5 text-purple-400" />
+                <BrainCircuit className="w-5 h-5 text-indigo-400" />
                 AI Grounded Root Cause Synthesis
               </h2>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3 text-xs font-mono font-semibold">
                 {incident.aiAnalysisStatus && (
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
-                    incident.aiAnalysisStatus === 'COMPLETED' ? 'bg-emerald-950/50 border-emerald-500/40 text-emerald-300' :
-                    incident.aiAnalysisStatus === 'PENDING' ? 'bg-amber-950/50 border-amber-500/40 text-amber-300' :
-                    'bg-red-950/50 border-red-500/40 text-red-300'
-                  }`}>
+                  <span className={
+                    incident.aiAnalysisStatus === 'COMPLETED' ? 'text-emerald-400' :
+                    incident.aiAnalysisStatus === 'PENDING' ? 'text-amber-400' :
+                    'text-red-400'
+                  }>
                     {incident.aiAnalysisStatus}
                   </span>
                 )}
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-semibold">
+                <span className="text-emerald-400">
                   {incident.aiScore || incident.rootCause?.confidence || 90}% AI Confidence
                 </span>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-lg bg-slate-900/90 border border-slate-800 space-y-2">
+            <div className="p-3.5 rounded-lg bg-slate-900/90 space-y-2">
               <p className="text-sm font-semibold text-indigo-300">{incident.rootCause?.summary || incident.aiAnalysis?.rootCauseAnalysis?.primaryHypothesis}</p>
               <p className="text-xs text-slate-400 leading-relaxed">{incident.rootCause?.details || incident.aiAnalysis?.rootCauseAnalysis?.explanation}</p>
             </div>
 
             {incident.aiAnalysis?.evidenceNarrative && (
-              <div className="p-3 rounded-lg bg-purple-950/20 border border-purple-500/20 text-xs text-purple-200/90 leading-relaxed">
-                <span className="font-bold text-purple-300 block mb-1 font-mono text-[11px] uppercase tracking-wider">
-                  Evidence Narrative Progression:
+              <div className="p-3 rounded-lg bg-slate-900/70 text-xs text-slate-300 leading-relaxed">
+                <span className="font-semibold text-indigo-300 block mb-1">
+                  Evidence Narrative Progression
                 </span>
                 {incident.aiAnalysis.evidenceNarrative}
               </div>
@@ -561,8 +562,8 @@ export const IncidentDetail = () => {
 
             {incident.rootCause?.evidence && incident.rootCause.evidence.length > 0 && (
               <div className="space-y-2">
-                <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">
-                  Grounded Telemetry Evidence:
+                <span className="text-xs font-semibold text-slate-300 block">
+                  Grounded Telemetry Evidence
                 </span>
                 <ul className="space-y-1.5">
                   {incident.rootCause.evidence.map((item, idx) => (
@@ -577,7 +578,7 @@ export const IncidentDetail = () => {
 
             {/* Uncertainty Assessment */}
             {incident.aiAnalysis?.uncertainty && (
-              <div className="p-2.5 rounded-lg bg-slate-950/70 border border-slate-800/80 flex items-start gap-2 text-xs">
+              <div className="p-2.5 rounded-lg bg-slate-950/70 flex items-start gap-2 text-xs">
                 <HelpCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                 <div className="space-y-0.5">
                   <span className="font-semibold text-slate-300">Uncertainty Assessment ({incident.aiAnalysis.uncertainty.level || 'LOW'}):</span>
@@ -589,24 +590,24 @@ export const IncidentDetail = () => {
 
           {/* External Web Intelligence (TinyFish) Card */}
           {((incident.externalEvidence && incident.externalEvidence.length > 0) || incident.externalEnrichment) && (
-            <div className="glass-panel rounded-xl p-5 border border-sky-500/30 space-y-4">
+            <div className="glass-panel rounded-xl p-5 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-sky-400">
                   <Globe className="w-5 h-5 text-sky-400" />
                   <h2 className="text-base font-bold text-slate-100">External Web Intelligence (TinyFish)</h2>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3 text-xs font-mono font-semibold">
                   {incident.externalEnrichment?.status && (
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
-                      incident.externalEnrichment.status === 'COMPLETED' ? 'bg-sky-950/50 border-sky-500/40 text-sky-300' :
-                      incident.externalEnrichment.status === 'SKIPPED' ? 'bg-slate-800 border-slate-700 text-slate-400' :
-                      'bg-amber-950/50 border-amber-500/40 text-amber-300'
-                    }`}>
+                    <span className={
+                      incident.externalEnrichment.status === 'COMPLETED' ? 'text-sky-400' :
+                      incident.externalEnrichment.status === 'SKIPPED' ? 'text-slate-400' :
+                      'text-amber-400'
+                    }>
                       {incident.externalEnrichment.status}
                     </span>
                   )}
                   {incident.externalEvidence?.length > 0 && (
-                    <span className="px-2.5 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-300 text-xs font-mono font-semibold">
+                    <span className="text-sky-300">
                       {incident.externalEvidence.length} Public Advisor{incident.externalEvidence.length > 1 ? 'ies' : 'y'}
                     </span>
                   )}
@@ -614,7 +615,7 @@ export const IncidentDetail = () => {
               </div>
 
               {/* Informational distinction notice */}
-              <div className="p-3 rounded-lg bg-sky-950/20 border border-sky-500/20 text-xs text-sky-200/90 flex items-start gap-2.5 leading-relaxed">
+              <div className="p-3 rounded-lg bg-sky-950/20 text-xs text-sky-200/90 flex items-start gap-2.5 leading-relaxed">
                 <ShieldAlert className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
                 <div>
                   <span className="font-semibold text-sky-300">Supplementary Evidence Notice: </span>
@@ -624,16 +625,16 @@ export const IncidentDetail = () => {
 
               {/* AI Corroboration Synthesis */}
               {(incident.externalEvidenceAnalysis?.explanation || incident.aiAnalysis?.externalEvidenceAnalysis?.explanation) && (
-                <div className="p-3.5 rounded-lg bg-slate-900/90 border border-slate-800 space-y-1.5">
+                <div className="p-3.5 rounded-lg bg-slate-900/90 space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] uppercase font-mono font-bold text-slate-300 tracking-wider">
-                      AI External Corroboration:
+                    <span className="text-xs font-semibold text-slate-300">
+                      AI External Corroboration
                     </span>
                     {(incident.externalEvidenceAnalysis?.status || incident.aiAnalysis?.externalEvidenceAnalysis?.status) && (
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
+                      <span className={`text-xs font-mono font-bold ${
                         (incident.externalEvidenceAnalysis?.status || incident.aiAnalysis?.externalEvidenceAnalysis?.status) === 'CORROBORATING'
-                          ? 'bg-emerald-950/50 border-emerald-500/40 text-emerald-300'
-                          : 'bg-amber-950/50 border-amber-500/40 text-amber-300'
+                          ? 'text-emerald-400'
+                          : 'text-amber-400'
                       }`}>
                         {incident.externalEvidenceAnalysis?.status || incident.aiAnalysis?.externalEvidenceAnalysis?.status}
                       </span>
@@ -648,24 +649,24 @@ export const IncidentDetail = () => {
               {/* List of Discovered External Advisories */}
               {incident.externalEvidence && incident.externalEvidence.length > 0 ? (
                 <div className="space-y-2.5">
-                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block font-mono">
-                    Discovered Public Advisories & Sources:
+                  <span className="text-xs font-semibold text-slate-400 block">
+                    Discovered Public Advisories & Sources
                   </span>
                   <div className="grid grid-cols-1 gap-2.5">
                     {incident.externalEvidence.map((item, idx) => (
                       <div
                         key={idx}
-                        className="p-3.5 rounded-lg bg-slate-900/70 border border-slate-800 hover:border-sky-500/40 transition-colors space-y-2"
+                        className="p-3.5 rounded-lg bg-slate-900/70 space-y-2"
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-3">
                             {item.isAuthoritative ? (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 flex items-center gap-1">
-                                <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                              <span className="text-xs font-mono font-bold text-emerald-400 flex items-center gap-1">
+                                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                                 Authoritative Status Page
                               </span>
                             ) : (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-800 border border-slate-700 text-slate-400">
+                              <span className="text-xs font-mono font-semibold text-slate-400">
                                 Community Candidate
                               </span>
                             )}
@@ -690,7 +691,7 @@ export const IncidentDetail = () => {
                           <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                         </a>
 
-                        <p className="text-xs text-slate-400 leading-relaxed bg-slate-950/50 p-2 rounded border border-slate-800/80">
+                        <p className="text-xs text-slate-400 leading-relaxed bg-slate-950/50 p-2 rounded">
                           {item.snippet}
                         </p>
                       </div>
@@ -698,7 +699,7 @@ export const IncidentDetail = () => {
                   </div>
                 </div>
               ) : incident.externalEnrichment?.reason ? (
-                <div className="text-xs text-slate-400 italic p-3 bg-slate-950/50 rounded-lg border border-slate-800">
+                <div className="text-xs text-slate-400 italic p-3 bg-slate-950/50 rounded-lg">
                   {incident.externalEnrichment.reason}
                 </div>
               ) : null}
@@ -706,11 +707,11 @@ export const IncidentDetail = () => {
           )}
 
           {/* Business Impact Prediction Card */}
-          <div className="glass-panel rounded-xl p-5 border border-slate-800 space-y-4">
+          <div className="glass-panel rounded-xl p-5 space-y-4">
             <h2 className="text-base font-bold text-slate-100">Operational & Business Impact Assessment</h2>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-3.5 rounded-lg bg-slate-900/60 border border-slate-800 space-y-1">
+              <div className="p-3.5 rounded-lg bg-slate-900/60 space-y-1">
                 <span className="text-slate-400 text-xs flex items-center gap-1.5">
                   <DollarSign className="w-4 h-4 text-emerald-400" />
                   Estimated Quantitative Impact
@@ -720,7 +721,7 @@ export const IncidentDetail = () => {
                 </p>
               </div>
 
-              <div className="p-3.5 rounded-lg bg-slate-900/60 border border-slate-800 space-y-1">
+              <div className="p-3.5 rounded-lg bg-slate-900/60 space-y-1">
                 <span className="text-slate-400 text-xs flex items-center gap-1.5">
                   <Users className="w-4 h-4 text-indigo-400" />
                   User Experience Impact
@@ -733,7 +734,7 @@ export const IncidentDetail = () => {
           </div>
 
           {/* Recommended Remediation Actions Card */}
-          <div className="glass-panel rounded-xl p-5 border border-slate-800 space-y-4">
+          <div className="glass-panel rounded-xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-slate-100">Recommended Action Plan</h2>
               <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
@@ -744,25 +745,25 @@ export const IncidentDetail = () => {
             
             <div className="space-y-3">
               {incident.recommendations?.map((rec, idx) => (
-                <div key={rec.id || idx} className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-slate-100">{rec.action}</span>
+                <div key={rec.id || idx} className="p-4 rounded-xl bg-slate-900/90 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold text-slate-100">{rec.action}</span>
+                    <div className="flex items-center gap-3 text-xs font-mono font-semibold shrink-0">
                       {rec.requiresApproval && (
-                        <span className="px-2 py-0.5 text-[9px] font-mono font-bold text-amber-300 bg-amber-950/60 rounded border border-amber-500/40 flex items-center gap-1">
-                          <Lock className="w-2.5 h-2.5" />
+                        <span className="text-amber-400 flex items-center gap-1">
+                          <Lock className="w-3 h-3" />
                           Requires Approval
                         </span>
                       )}
+                      <span className="text-indigo-400">
+                        {rec.type || 'HIGH'}
+                      </span>
                     </div>
-                    <span className="px-2 py-0.5 text-[10px] font-mono font-semibold text-purple-400 bg-purple-500/10 rounded border border-purple-500/20">
-                      {rec.type || 'HIGH'}
-                    </span>
                   </div>
                   <p className="text-xs text-slate-400">{rec.description}</p>
                   
                   {rec.command && (
-                    <div className="mt-2 flex items-center justify-between p-2.5 rounded-lg bg-slate-950 font-mono text-xs text-indigo-300 border border-slate-800">
+                    <div className="mt-2 flex items-center justify-between p-2.5 rounded-lg bg-slate-950 font-mono text-xs text-indigo-300">
                       <code className="truncate max-w-md">{rec.command}</code>
                       <button
                         onClick={() => handleCopyCommand(rec.id || idx, rec.command)}
@@ -780,13 +781,13 @@ export const IncidentDetail = () => {
             {/* Investigation Steps */}
             {incident.aiAnalysis?.investigationSteps && incident.aiAnalysis.investigationSteps.length > 0 && (
               <div className="space-y-2 pt-3 border-t border-slate-800">
-                <span className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider block font-mono flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
                   <FileSearch className="w-3.5 h-3.5 text-indigo-400" />
-                  Recommended Diagnostic Investigation Steps:
+                  Recommended Diagnostic Investigation Steps
                 </span>
                 <div className="space-y-1.5">
                   {incident.aiAnalysis.investigationSteps.map((step, idx) => (
-                    <div key={idx} className="text-xs text-slate-400 flex items-start gap-2 bg-slate-950/60 p-2.5 rounded border border-slate-800/80">
+                    <div key={idx} className="text-xs text-slate-400 flex items-start gap-2 bg-slate-950/60 p-2.5 rounded">
                       <span className="w-4 h-4 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-[10px] font-mono font-bold shrink-0">
                         {step.step || idx + 1}
                       </span>
@@ -805,13 +806,13 @@ export const IncidentDetail = () => {
         {/* Right Column (1 Col): Timeline & AI Assistant */}
         <div className="space-y-6">
           {/* Incident Timeline */}
-          <div className="glass-panel rounded-xl p-5 border border-slate-800 space-y-4">
+          <div className="glass-panel rounded-xl p-5 space-y-4">
             <h2 className="text-base font-bold text-slate-100">Reconstructed Timeline</h2>
             <Timeline events={incident.timeline || []} />
           </div>
 
           {/* AI Incident Assistant Q&A */}
-          <div className="glass-panel rounded-xl p-5 border border-slate-800 space-y-4">
+          <div className="glass-panel rounded-xl p-5 space-y-4">
             <div className="flex items-center gap-2 text-indigo-400">
               <MessageSquare className="w-5 h-5" />
               <h2 className="text-base font-bold text-slate-100">Incident Assistant Chat</h2>

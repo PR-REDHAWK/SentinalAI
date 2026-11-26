@@ -99,13 +99,13 @@ export const ReportIncident = () => {
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-panel rounded-xl p-6 border border-slate-800 space-y-6 relative z-10"
+        className="glass-panel rounded-xl p-6 space-y-6 relative z-10"
       >
         {/* Voice Input Callout Box */}
-        <div className="p-4 rounded-xl bg-gradient-to-r from-indigo-950/40 via-purple-950/20 to-slate-900 border border-indigo-500/30 flex items-center justify-between gap-4">
+        <div className="p-4 rounded-xl bg-slate-900/80 flex items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-indigo-300 font-semibold text-xs">
-              <Sparkles className="w-4 h-4 text-purple-400" />
+              <Sparkles className="w-4 h-4 text-indigo-400" />
               <span>Natural Speech-to-Text Reporting</span>
             </div>
             <p className="text-xs text-slate-400">
@@ -141,10 +141,10 @@ export const ReportIncident = () => {
               value={severity}
               onChange={(e) => setSeverity(e.target.value)}
               options={[
-                { value: 'Critical', label: '🔴 Critical - Outage across core services' },
-                { value: 'High', label: '🟠 High - Significant customer impact' },
-                { value: 'Medium', label: '🟡 Medium - Non-critical service degraded' },
-                { value: 'Low', label: '🔵 Low - Minor internal issue' }
+                { value: 'Critical', label: 'Critical - Outage across core services' },
+                { value: 'High', label: 'High - Significant customer impact' },
+                { value: 'Medium', label: 'Medium - Non-critical service degraded' },
+                { value: 'Low', label: 'Low - Minor internal issue' }
               ]}
             />
 
@@ -223,7 +223,7 @@ export const ReportIncident = () => {
               className="absolute inset-0 bg-slate-950/90 backdrop-blur-md bg-grid-pattern overflow-hidden flex items-center justify-center"
             >
               <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-[100px] animate-pulse" />
-              <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
+              <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-sky-600/15 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
             </motion.div>
 
             {/* Modal Content */}
@@ -231,13 +231,13 @@ export const ReportIncident = () => {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: -20 }}
-              className="relative w-full max-w-lg glass-panel rounded-2xl p-8 border border-slate-700 shadow-[0_0_50px_-12px_rgba(99,102,241,0.5)] z-10 overflow-hidden"
+              className="relative w-full max-w-lg glass-panel rounded-2xl p-8 shadow-[0_0_50px_-12px_rgba(99,102,241,0.4)] z-10 overflow-hidden"
             >
               {/* Top Logo and Glowing Effects */}
               <div className="flex flex-col items-center justify-center text-center space-y-4 mb-8">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-indigo-500 rounded-full blur-xl opacity-50 animate-pulse" />
-                  <div className="relative p-4 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 border border-indigo-400 shadow-xl text-white">
+                  <div className="absolute inset-0 bg-indigo-500 rounded-full blur-xl opacity-40 animate-pulse" />
+                  <div className="relative p-4 rounded-full bg-indigo-600 shadow-xl text-white">
                     <ShieldAlert className="w-10 h-10" />
                   </div>
                 </div>
@@ -255,7 +255,7 @@ export const ReportIncident = () => {
               {/* Progress Bar */}
               <div className="w-full h-1.5 bg-slate-800 rounded-full mb-8 overflow-hidden relative">
                 <motion.div 
-                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
+                  className="absolute top-0 left-0 h-full bg-indigo-500 rounded-full"
                   initial={{ width: 0 }}
                   animate={{ width: `${(Math.min(currentStep, AI_PROCESSING_STEPS.length) / AI_PROCESSING_STEPS.length) * 100}%` }}
                   transition={{ ease: "easeInOut", duration: 0.8 }}

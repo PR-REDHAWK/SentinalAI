@@ -81,7 +81,7 @@ export const Analytics = () => {
           value="1,420"
           change="Alert fatigue reduced by 74%"
           icon={ShieldCheck}
-          color="purple"
+          color="indigo"
         />
         <StatCard
           title="AI Vector Match Rate"

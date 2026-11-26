@@ -22,7 +22,7 @@ const getSimulatorPayloads = () => {
       id: 'datadog',
       name: 'Datadog',
       icon: Activity,
-      color: 'from-purple-500 to-indigo-600',
+      color: 'bg-indigo-600',
       endpoint: '/api/webhooks/datadog',
       getPayload: () => ({
         alert_id: "10934812",
@@ -57,7 +57,7 @@ const getSimulatorPayloads = () => {
       id: 'prometheus',
       name: 'Prometheus',
       icon: Database,
-      color: 'from-orange-500 to-red-600',
+      color: 'bg-orange-600',
       endpoint: '/api/webhooks/prometheus',
       getPayload: () => ({
         status: "firing",
@@ -89,7 +89,7 @@ const getSimulatorPayloads = () => {
       id: 'cloudwatch',
       name: 'AWS CloudWatch',
       icon: Cloud,
-      color: 'from-blue-500 to-cyan-600',
+      color: 'bg-sky-600',
       endpoint: '/api/webhooks/cloudwatch',
       getPayload: () => ({
         AlarmName: "TargetTracking-ASG-ScaleOut",
@@ -116,7 +116,7 @@ const getSimulatorPayloads = () => {
       id: 'kubernetes',
       name: 'Kubernetes',
       icon: Box,
-      color: 'from-blue-600 to-indigo-700',
+      color: 'bg-blue-600',
       endpoint: '/api/webhooks/kubernetes',
       getPayload: () => ({
         kind: "Event",
@@ -220,10 +220,10 @@ export const WebhookSimulator = () => {
               key={integration.id}
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-panel rounded-xl p-6 border border-slate-800 space-y-4"
+              className="glass-panel rounded-xl p-6 space-y-4"
             >
               <div className="flex items-center gap-3">
-                <div className={`p-3 rounded-xl bg-gradient-to-tr ${integration.color}`}>
+                <div className={`p-3 rounded-xl ${integration.color}`}>
                   <Icon className="w-6 h-6 text-white" />
                 </div>
                 <div>

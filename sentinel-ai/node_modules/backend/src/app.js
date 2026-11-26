@@ -9,6 +9,18 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Ensure database is connected before handling API requests
+const connectDB = require('./config/db');
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+  } catch (err) {
+    // If DB fails to connect, log and let the controller handle it gracefully
+    console.error('Request DB connection check failed:', err.message);
+  }
+  next();
+});
+
 // Routes
 app.use('/api', routes);
 

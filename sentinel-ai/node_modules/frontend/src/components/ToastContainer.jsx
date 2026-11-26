@@ -13,10 +13,10 @@ const toastConfig = {
   },
   ai: {
     icon: Sparkles,
-    border: 'border-purple-500/40',
-    bg: 'bg-slate-900/95 shadow-purple-950/30',
-    badge: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    iconColor: 'text-purple-400'
+    border: 'border-sky-500/30',
+    bg: 'bg-slate-900/95 shadow-slate-950/50',
+    badge: 'bg-sky-500/20 text-sky-400 border-sky-500/30',
+    iconColor: 'text-sky-400'
   },
   success: {
     icon: CheckCircle2,

@@ -37,10 +37,10 @@ export const Navbar = () => {
       {/* Right Controls */}
       <div className="flex items-center gap-4">
         {/* Real-time Indicator */}
-        <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-mono transition-all ${
+        <div className={`hidden md:flex items-center gap-2 text-xs font-mono transition-all ${
           isConnected
-            ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
-            : 'bg-rose-500/10 border border-rose-500/30 text-rose-300'
+            ? 'text-emerald-400'
+            : 'text-rose-400'
         }`}>
           <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400 animate-ping' : 'bg-rose-400'}`} />
           <span>{isConnected ? 'Socket.IO Live Stream' : 'Live Stream Offline'}</span>

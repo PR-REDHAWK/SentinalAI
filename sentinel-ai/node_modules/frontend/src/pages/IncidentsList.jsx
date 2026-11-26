@@ -52,7 +52,7 @@ export const IncidentsList = () => {
       </div>
 
       {/* Filter Bar */}
-      <div className="glass-panel rounded-xl p-4 border border-slate-800 flex flex-wrap items-center justify-between gap-4">
+      <div className="glass-panel rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex-1 min-w-[240px]">
           <Input
             placeholder="Filter by title, ID, microservice..."
@@ -124,7 +124,7 @@ export const IncidentsList = () => {
           onAction={searchTerm || severityFilter !== 'All' || statusFilter !== 'All' ? undefined : () => navigate('/simulator')}
         />
       ) : viewMode === 'table' ? (
-        <div className="glass-panel rounded-xl p-5 border border-slate-800">
+        <div className="glass-panel rounded-xl p-5">
           <IncidentTable incidents={filteredIncidents} />
         </div>
       ) : (

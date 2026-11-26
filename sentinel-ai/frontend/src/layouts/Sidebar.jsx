@@ -27,14 +27,14 @@ export const Sidebar = () => {
       {/* Top Header */}
       <div>
         <div className="p-5 flex items-center gap-3 border-b border-slate-800/80">
-          <div className="p-2 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/25">
+          <div className="p-2 rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-500/20">
             <ShieldAlert className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">
+            <h1 className="text-lg font-extrabold tracking-tight text-slate-100">
               Sentinel<span className="text-indigo-400">AI</span>
             </h1>
-            <p className="text-[10px] text-slate-400 font-mono tracking-wide uppercase">Incident Intelligence</p>
+            <p className="text-[11px] text-slate-400 font-mono">Incident Intelligence</p>
           </div>
         </div>
 
@@ -73,9 +73,9 @@ export const Sidebar = () => {
 
       {/* AI Assistant Banner Footer */}
       <div className="p-4">
-        <div className="p-3.5 rounded-xl bg-gradient-to-br from-indigo-950/60 to-purple-950/40 border border-indigo-500/20 text-xs space-y-2 relative overflow-hidden">
+        <div className="p-3.5 rounded-xl bg-slate-900/80 text-xs space-y-2 relative overflow-hidden">
           <div className="flex items-center gap-2 text-indigo-300 font-semibold">
-            <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
+            <Sparkles className="w-4 h-4 text-indigo-400 animate-pulse" />
             <span>AI Copilot Active</span>
           </div>
           <p className="text-slate-400 leading-relaxed text-[11px]">

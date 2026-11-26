@@ -11,7 +11,7 @@ export const EmptyState = ({
 }) => {
   return (
     <div className="glass-panel rounded-xl p-10 flex flex-col items-center justify-center text-center space-y-4 max-w-md mx-auto my-8">
-      <div className="p-4 rounded-full bg-slate-900 border border-slate-800 text-slate-400">
+      <div className="p-4 rounded-xl bg-slate-900 text-slate-400">
         <Icon className="w-8 h-8" />
       </div>
       <div>

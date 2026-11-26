@@ -82,9 +82,9 @@ export const Dashboard = () => {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold tracking-tight text-slate-100">Live Incident Overview</h1>
-            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono flex items-center gap-1.5">
+            <span className="text-emerald-400 text-xs font-mono flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               Live Stream
             </span>
@@ -139,7 +139,7 @@ export const Dashboard = () => {
           value={`${stats.aiAccuracy}%`}
           change={stats.accuracyChange}
           icon={Sparkles}
-          color="purple"
+          color="indigo"
         />
       </div>
 
@@ -244,7 +244,7 @@ export const Dashboard = () => {
         <div className="space-y-6">
           {/* Recent AI Analyses Panel */}
           <div className="glass-panel rounded-xl p-5 space-y-4">
-            <div className="flex items-center gap-2 text-purple-400">
+            <div className="flex items-center gap-2 text-indigo-400">
               <BrainCircuit className="w-5 h-5 animate-pulse" />
               <h3 className="text-base font-semibold text-slate-100">AI Correlation Log</h3>
             </div>
@@ -253,7 +253,7 @@ export const Dashboard = () => {
               {recentAiAnalyses.length === 0 ? (
                 <p className="text-xs text-slate-500 italic p-3">No AI correlations recorded yet.</p>
               ) : recentAiAnalyses.map((ai) => (
-                <div key={ai.id} className="p-3 rounded-lg bg-slate-900/80 border border-purple-500/20 text-xs space-y-1 hover:border-purple-500/40 transition-colors">
+                <div key={ai.id} className="p-3 rounded-lg bg-slate-900/80 text-xs space-y-1 hover:bg-slate-800/70 transition-colors">
                   <div className="flex items-center justify-between text-slate-300">
                     <span className="font-semibold text-indigo-300">INC-{ai.incidentId}</span>
                     <span className="text-[10px] text-slate-500 font-mono">{ai.timestamp}</span>
@@ -276,10 +276,10 @@ export const Dashboard = () => {
               {upcomingRecommendations.length === 0 ? (
                 <p className="text-xs text-slate-500 italic p-3">No pending recommendations.</p>
               ) : upcomingRecommendations.map((rec, idx) => (
-                <div key={rec.id || idx} className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 text-xs space-y-1.5">
+                <div key={rec.id || idx} className="p-3 rounded-lg bg-slate-900/80 text-xs space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-slate-200">{rec.title}</span>
-                    <span className="text-[10px] font-mono font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                    <span className="text-[11px] font-mono font-semibold text-emerald-400">
                       {rec.confidence}% Match
                     </span>
                   </div>

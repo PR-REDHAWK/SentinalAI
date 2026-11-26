@@ -74,8 +74,9 @@ exports.updateIncident = asyncHandler(async (req, res, next) => {
   }
 
   const oldStatus = incident.status;
+  const { _id, id, timeline, createdAt, updatedAt, ...safeUpdates } = req.body;
   
-  incident = await Incident.findByIdAndUpdate(req.params.id, req.body, {
+  incident = await Incident.findByIdAndUpdate(req.params.id, safeUpdates, {
     new: true,
     runValidators: true
   });

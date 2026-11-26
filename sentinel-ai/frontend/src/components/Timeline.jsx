@@ -15,7 +15,7 @@ const colorMap = {
   alert: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
   metric: 'text-rose-400 bg-rose-500/10 border-rose-500/30',
   incident: 'text-red-400 bg-red-500/10 border-red-500/30',
-  ai: 'text-purple-400 bg-purple-500/10 border-purple-500/30',
+  ai: 'text-sky-400 bg-sky-500/10 border-sky-500/30',
   resolution: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
 };
 

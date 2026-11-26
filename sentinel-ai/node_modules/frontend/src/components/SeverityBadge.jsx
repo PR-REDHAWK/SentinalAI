@@ -37,12 +37,11 @@ export const SeverityBadge = ({ severity = 'Medium', size = 'md' }) => {
   const Icon = config.icon;
 
   const sizeClasses = size === 'sm' 
-    ? 'px-2 py-0.5 text-xs font-medium' 
-    : 'px-2.5 py-1 text-xs font-semibold';
+    ? 'text-xs font-medium' 
+    : 'text-xs font-semibold';
 
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border ${config.bg} ${config.border} ${config.text} ${sizeClasses}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${config.dot} animate-pulse`} />
+    <span className={`inline-flex items-center gap-1.5 ${config.text} ${sizeClasses}`}>
       <Icon className="w-3.5 h-3.5" />
       {severity}
     </span>

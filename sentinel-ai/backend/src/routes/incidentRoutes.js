@@ -20,13 +20,22 @@ const incidentValidation = [
   check('affectedService', 'Affected Service is required').not().isEmpty()
 ];
 
+const updateValidation = [
+  check('title', 'Title cannot be empty').optional().not().isEmpty(),
+  check('description', 'Description cannot be empty').optional().not().isEmpty(),
+  check('severity', 'Severity must be Critical, High, Medium, or Low').optional().isIn(['Critical', 'High', 'Medium', 'Low']),
+  check('status', 'Status must be Investigating, Active, Mitigated, or Resolved').optional().isIn(['Investigating', 'Active', 'Mitigated', 'Resolved']),
+  check('category', 'Category cannot be empty').optional().not().isEmpty(),
+  check('affectedService', 'Affected Service cannot be empty').optional().not().isEmpty()
+];
+
 router.route('/')
   .post(protect, incidentValidation, validateRequest, createIncident)
   .get(getAllIncidents);
 
 router.route('/:id')
   .get(getIncidentById)
-  .put(protect, incidentValidation, validateRequest, updateIncident)
+  .put(protect, updateValidation, validateRequest, updateIncident)
   .delete(protect, deleteIncident);
 
 module.exports = router;

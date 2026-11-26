@@ -23,7 +23,7 @@ export const Settings = () => {
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* AI Engine Settings */}
-        <div className="glass-panel rounded-xl p-6 border border-slate-800 space-y-4">
+        <div className="glass-panel rounded-xl p-6 space-y-4">
           <div className="flex items-center gap-2 text-indigo-400">
             <Cpu className="w-5 h-5" />
             <h2 className="text-base font-bold text-slate-100">AI Model & Vector Search Configuration</h2>
@@ -59,8 +59,8 @@ export const Settings = () => {
         </div>
 
         {/* Integration Credentials */}
-        <div className="glass-panel rounded-xl p-6 border border-slate-800 space-y-4">
-          <div className="flex items-center gap-2 text-purple-400">
+        <div className="glass-panel rounded-xl p-6 space-y-4">
+          <div className="flex items-center gap-2 text-indigo-400">
             <Database className="w-5 h-5" />
             <h2 className="text-base font-bold text-slate-100">Ingestion Webhooks & Telemetry</h2>
           </div>
